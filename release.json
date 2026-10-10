@@ -84,7 +84,7 @@
     },
     {
       "path": "scripts/release.py",
-      "sha256": "a5e27dc77a2297f931f03ca12095142fb1fe20fab7bd721ccc0f292da9a7f718"
+      "sha256": "3968146d4c4cdbac678dfd220fe0ff7f3471bd55cb38fc30ba7083ae1b9da40e"
     },
     {
       "path": "scripts/setup.py",

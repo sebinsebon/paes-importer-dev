@@ -22,6 +22,24 @@ if __name__ == '__main__':
     if args.write:
         (ROOT / 'release.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
     else:
-        if json.loads((ROOT / 'release.json').read_text(encoding='utf-8')) != manifest:
-            raise SystemExit('Release differs; regenerate intentionally with --write')
+        recorded = json.loads((ROOT / 'release.json').read_text(encoding='utf-8'))
+        if recorded != manifest:
+            recorded_files = {item['path']: item['sha256'] for item in recorded.get('files', [])}
+            current_files = {item['path']: item['sha256'] for item in manifest['files']}
+            missing = sorted(set(recorded_files) - set(current_files))
+            added = sorted(set(current_files) - set(recorded_files))
+            changed = sorted(path for path in set(recorded_files) & set(current_files)
+                             if recorded_files[path] != current_files[path])
+            print('Release manifest mismatch:')
+            for path in missing:
+                print('  missing:', path)
+            for path in added:
+                print('  added:', path)
+            for path in changed:
+                print('  changed:', path)
+            if recorded.get('version') != manifest.get('version'):
+                print('  version:', recorded.get('version'), '!=', manifest.get('version'))
+            if recorded.get('protocol_version') != manifest.get('protocol_version'):
+                print('  protocol_version:', recorded.get('protocol_version'), '!=', manifest.get('protocol_version'))
+            raise SystemExit(1)
         print(str(len(manifest['files'])) + ' release files verified')
