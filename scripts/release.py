@@ -9,8 +9,9 @@ DIRECTORIES = {'scripts', 'shared', 'viewer', 'references', 'tests', 'examples',
 ROOT_FILES = {'SKILL.md', 'README.md', 'AGENTS.md', 'LICENSE', 'NOTICE.md', 'requirements.txt', 'requirements-dev.txt', 'run.ps1', '.gitignore', '.gitattributes'}
 
 def records():
+    paths = sorted(ROOT.rglob('*'), key=lambda p: p.relative_to(ROOT).as_posix())
     return [{'path': p.relative_to(ROOT).as_posix(), 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
-            for p in sorted(ROOT.rglob('*')) if p.is_file()
+            for p in paths if p.is_file()
             and not any(part in EXCLUDED for part in p.relative_to(ROOT).parts)
             and p.name != 'release.json' and p.suffix.lower() not in ('.pdf', '.zip', '.paessed', '.png')
             and (p.relative_to(ROOT).parts[0] in DIRECTORIES or p.relative_to(ROOT).as_posix() in ROOT_FILES)]
