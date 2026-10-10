@@ -1,0 +1,182 @@
+{
+  "version": "1.0.0-portable",
+  "protocol_version": "0.3.0",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "2e2500252e2729819e5bee4555904eb0dd920ef526803f4745b169802717bdbf"
+    },
+    {
+      "path": ".github/workflows/test.yml",
+      "sha256": "0cca45e08ead26fd0bce8814e785a66a76b51115d45dd4e8aa89a7138c2bfad6"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "1bc69dd331f888555578ae8dbade254eb0fde1c5948f269d43858d6475fa2b41"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "efc247c06b8954c9b2a67ab9bc007131f07cbef6d794cf08e04877625e1d66aa"
+    },
+    {
+      "path": "docs/COMPATIBILITY.md",
+      "sha256": "b089fedee4d2b0d2cf77c6ed78792f6423a1524ce254534b4677aade9387e9b5"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "sha256": "f75322cfff404ce75bd665d367c2f69a07f3ea256c9e3445435eb4922d017056"
+    },
+    {
+      "path": "docs/VERIFICATION.md",
+      "sha256": "1637d9f0e383b24c7f64393c3a099a06719324ea10c05f59b61e9dd03e6fb805"
+    },
+    {
+      "path": "examples/synthetic.py",
+      "sha256": "bd8e88f21d11c00d88c9442d8bc069cee2b8a8f85717432e807aa96559a5c1aa"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "10e7f42e53ffb4146f402d941b07ce1e060cb2e15efe01502b31b21e06ed90d6"
+    },
+    {
+      "path": "NOTICE.md",
+      "sha256": "a3f483aecdc2f5cb518e14085ecec424fc4015df1ebf3f0182ae161f3a1ddf33"
+    },
+    {
+      "path": "README.md",
+      "sha256": "c9b86a3931ffe2cc96434d025f058b45b5fcf352a9b236808bb5caac24a60ff2"
+    },
+    {
+      "path": "references/audit.md",
+      "sha256": "994c60675c83814416eec9c693d80ee824dc60b448e18e52c185e9c09b141ced"
+    },
+    {
+      "path": "references/interfaces.md",
+      "sha256": "462b123f86eb92a03b3185a5297694d5ccd99a42fc478334c6e186ebee6ab564"
+    },
+    {
+      "path": "references/workflow.md",
+      "sha256": "ad24a6ed6cf315b6c49515039e5c0517a5a662d1c8a036000aeb20007a58bf2b"
+    },
+    {
+      "path": "requirements-dev.txt",
+      "sha256": "4c2355efda0785f076e7f0f6b5d5342ad9eb3c5b1479497024e519353e3b8f5b"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "2a85e6a46bee1dc16ff4e8b6119798e1627829a698050a13da79e6609fdab577"
+    },
+    {
+      "path": "run.ps1",
+      "sha256": "8f042f742f8f9f51fba04b5b1f2916ad2d9d377ce9cd1d0bb2dcdc04855e90d4"
+    },
+    {
+      "path": "scripts/importer.py",
+      "sha256": "7d5685790e5d1f3a8fa05c61c7fc65620e46602b1d2b37d7bbb47d897c27b9bc"
+    },
+    {
+      "path": "scripts/make_bundle.py",
+      "sha256": "6ee9b6647a3145d2e03afef3525c348e8aacdc6d0782e299ce2e4df471c12cd1"
+    },
+    {
+      "path": "scripts/policy.py",
+      "sha256": "6d79cc1a8f41abbdd0856c99dc17fc1b31a69701fbd53ad05394acf5f40da847"
+    },
+    {
+      "path": "scripts/release.py",
+      "sha256": "a5e27dc77a2297f931f03ca12095142fb1fe20fab7bd721ccc0f292da9a7f718"
+    },
+    {
+      "path": "scripts/setup.py",
+      "sha256": "42a8a2373c25451934576393393151b8079d5a1547aa65c8aea802928b257b5a"
+    },
+    {
+      "path": "scripts/verify.py",
+      "sha256": "c4bf9871cc2d002fe659367c9fde0ccbfcdede3a9f0059ed9a938c4f4f57c14b"
+    },
+    {
+      "path": "shared/references/content-contract.md",
+      "sha256": "9dd48bbe7f3396d83189ce7c2bbc1f72df641a8e6e464967899fa5d07b35c374"
+    },
+    {
+      "path": "shared/references/package-contract.md",
+      "sha256": "680562f236bfc9c22708ed53091d0bc738dedf0419cdcf0529136c1f276635be"
+    },
+    {
+      "path": "shared/schemas/final.schema.json",
+      "sha256": "bd4bab88a548cc8a99c6ff97e73dedf339030091dd0527d6c59785dcf0742c34"
+    },
+    {
+      "path": "shared/scripts/check_final.cjs",
+      "sha256": "1f28c34caa92ee0333df9c2679d8887eaa1c9386c61941e7090a02ebe002a9dc"
+    },
+    {
+      "path": "shared/scripts/check_math.cjs",
+      "sha256": "bf38dd9c3150fddbe5e498fda6defec46551d42c45c9b3ba39a6a72304eb6d75"
+    },
+    {
+      "path": "shared/scripts/check_package.cjs",
+      "sha256": "20a3d34e70bffdd4c428116ed288ec9c2af31c77dcaaf45c3820395186a706f2"
+    },
+    {
+      "path": "shared/scripts/direct_gate.py",
+      "sha256": "2842bef8bbd628e7ad9a8757b14ab552f9e0190dfb3d76eb3799e905c1800d6e"
+    },
+    {
+      "path": "shared/scripts/lab.py",
+      "sha256": "ae37870058350675456ad60059a186a82100dec289a7c16fc04150a61f4bcc3b"
+    },
+    {
+      "path": "shared/scripts/package_io.py",
+      "sha256": "f5ccf6055cee69e189826e444074d7320e15272ee05fadfd7cb8f53d4df2fbf3"
+    },
+    {
+      "path": "shared/scripts/pdf_assets.py",
+      "sha256": "41ebc9323d512b56dc38417be8026292e9d50c0d747e83fad611237655875911"
+    },
+    {
+      "path": "shared/scripts/pipeline.py",
+      "sha256": "588bf7e7e1ec730df5d2a2998aad5a15e3500c68aacb8d3be33c3b837ab7f954"
+    },
+    {
+      "path": "SKILL.md",
+      "sha256": "b0bc24312f4961bd526b11795b976cc4ebc1e114054cb17bb84ead905da8eca6"
+    },
+    {
+      "path": "tests/test_importer.py",
+      "sha256": "3c97805f1ac6b6733c9bde102f43907ae7ccae31c1c80b85d316510fc717e3b2"
+    },
+    {
+      "path": "viewer/package-reader.js",
+      "sha256": "95832d41735ee149266ab5630ab6a183ec6dfbf73f30caab48505e6b42d056fb"
+    },
+    {
+      "path": "viewer/validator.js",
+      "sha256": "ad9d91f5600b7a94c2005fc274b8d4e6066baf8b66fd85a22b69a2a9111ad193"
+    },
+    {
+      "path": "viewer/vendor/jszip/dist/jszip.min.js",
+      "sha256": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e"
+    },
+    {
+      "path": "viewer/vendor/jszip/LICENSE.markdown",
+      "sha256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4"
+    },
+    {
+      "path": "viewer/vendor/jszip/package.json",
+      "sha256": "83569b5b130b5ec27ae281ed80420ad364baf1bf64cb82e6ac8fb891e1b4ec4c"
+    },
+    {
+      "path": "viewer/vendor/katex/dist/katex.min.js",
+      "sha256": "e8d885505949f3a5f4abdd5dd0d53696bd1371ad26ffbf4f310dcd77c8cdae89"
+    },
+    {
+      "path": "viewer/vendor/katex/LICENSE",
+      "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3"
+    },
+    {
+      "path": "viewer/vendor/katex/package.json",
+      "sha256": "bd6430ca96592a055393a1ce980925162da3d40cd0231813d41ef0c56daacd91"
+    }
+  ]
+}

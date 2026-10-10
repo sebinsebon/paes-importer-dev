@@ -1,0 +1,12 @@
+# Decisiones y mejoras
+
+1. Seleccionar por capacidades y pauta, no por marca del modelo. Antes de producir se observan visuales, recortes, ejecución, validación y ZIP; la skill no agrega herramientas inexistentes.
+2. Con pauta completa, evitar resolución y auditoría redundantes. Conservar cotejo durante importación: la letra correcta no demuestra que se copió el ejercicio correcto. No prometer ahorro cuantitativo de tokens sin medirlo.
+3. Tratar pauta parcial por pregunta: solo lo faltante se resuelve/audita. Nunca aceptar una pauta por similitud de nombre.
+4. Registrar origen de explicaciones: reutilizar justificación, o generar explicación breve de IA si solo hay letras.
+5. Chat web ofrece ZIP descargable y pregunta preferencia de guardado, sin fingir escritura local. UI con selección si existe; fallback numerado si no.
+6. Autorrevisión no es independencia: conserva provisionales. La revisión independiente usa sesiones nuevas, evidencia y decisiones; tampoco garantiza verdad matemática.
+7. Reutilizar controles de V1, eliminando rutas/Test2/outputs privados. El trabajo está en un clon nuevo del repo dedicado; V1/V2 quedan intactos.
+8. Cierre acotado a M1. M2, Ciencias, Historia, Competencia Lectora, varios ensayos simultáneos e integración web requieren ampliación y pruebas.
+9. Conservar originales y reanudación: destinos por ejecución, mapa/ruta congelados, hashes, respuestas originales y versiones. No sobrescribir resultados publicados.
+10. Separar publicación del código y uso con contenido: bundle incluye motor, referencias, licencias y fixtures ficticios. PDFs reales/outputs privados quedan fuera. Implementación sin corridas reales de IA ni publicación automática a GitHub.
