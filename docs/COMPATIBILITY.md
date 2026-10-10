@@ -4,7 +4,7 @@ SKILL.md funciona como instrucciones cuando el anfitrión puede leer las referen
 
 | Anfitrión | Estado de este bundle |
 | --- | --- |
-| AGY | V1 histórica tuvo uso real; corrida portable pendiente. |
+| AGY | Corrida real de este bundle pendiente. |
 | Codex CLI/app | Adaptación preparada; corrida real pendiente. |
 | Claude Code | Adaptación preparada; corrida real pendiente. |
 | Chat web con archivos/código | Ruta descargable y consentimiento preparados; prueba real pendiente. |

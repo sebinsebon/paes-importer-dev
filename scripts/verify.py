@@ -1,4 +1,4 @@
-"""Post-process a completed v1 run; AI review is performed by the host, not Python."""
+"""Review a completed base run; AI review is performed by the host, not Python."""
 from __future__ import annotations
 import argparse
 import copy

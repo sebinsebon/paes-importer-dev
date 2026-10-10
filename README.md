@@ -30,7 +30,7 @@ Pauta con letras: explicación breve generada por IA. Con justificación: reutil
 
 ## Instalación
 
-Requisitos: **Python 3.12+ y Node.js 18+**. Validadores JS y sus bibliotecas/licencias ya están incluidos; no necesita npm install.
+Requisitos: **Python 3.12+ y Node.js 18+** (`node` disponible en PATH). Validadores JS y sus bibliotecas/licencias ya están incluidos; no necesita npm install. El instalador descarga las dependencias Python fijadas en requirements.txt; para instalación sin red, deben estar disponibles en el entorno o en un repositorio de paquetes configurado por el usuario.
 
 ~~~sh
 git clone https://github.com/sebinsebon/paes-importer-skill.git
@@ -39,6 +39,10 @@ python -B scripts/setup.py
 ~~~
 
 Windows: .venv/Scripts/python.exe -B scripts/importer.py, o ./run.ps1. Linux/macOS: .venv/bin/python -B scripts/importer.py. También sirve un Python con requirements.txt instalado. setup crea .venv y tmp dentro de este checkout; no borra un entorno existente. Si falla pip, conserva el error y reintenta con el Python ya creado.
+
+Los ejemplos con rutas relativas parten de la carpeta que contiene SKILL.md. `python` debe ser el intérprete con las dependencias instaladas: sustituye ese comando por `.venv/Scripts/python.exe` en Windows o `.venv/bin/python` en Linux/macOS si no activaste el entorno. Desde otra carpeta usa las rutas absolutas del intérprete y del script; en PowerShell invoca rutas entre comillas con `&`. Los scripts encuentran sus recursos desde su ubicación, aunque la ruta contenga espacios o acentos.
+
+Para trasladar o compartir la skill, utiliza el clon o el bundle completo. `.venv` pertenece a cada instalación: sus ejecutables y scripts de activación pueden guardar rutas absolutas y debe recrearse en la nueva ubicación con setup.py, conservando primero el entorno anterior fuera de `.venv` si existe. No copies entornos virtuales entre equipos. Los PDFs y las salidas se eligen explícitamente; las ejecuciones guardan sus rutas originales para reanudación y auditoría, por lo que trasladar el código no migra ejecuciones existentes.
 
 El agente puede leer [SKILL.md](SKILL.md) desde esta carpeta. Para descubrimiento en Codex/Claude Code, copia el bundle completo bajo .agents/skills/paes-importer o .claude/skills/paes-importer; prepara dependencias allí o usa otro Python instalado. No es necesario instalar globalmente. [Compatibilidad](docs/COMPATIBILITY.md).
 
@@ -73,7 +77,7 @@ python -B scripts/release.py
 python -B scripts/make_bundle.py --output /ruta/absoluta/paes-importer.zip
 ~~~
 
-Pruebas con PDFs ficticios: render, crops, modos, pauta, cotejo, auditoría, reanudación y paquete. No necesitan PDFs privados, outputs históricos ni modelos. [Verificación](docs/VERIFICATION.md).
+Pruebas con PDFs ficticios: render, crops, modos, pauta, cotejo, auditoría, reanudación y paquete. La prueba de portabilidad extrae el bundle en una ruta con espacios y acentos y ejecuta la suite del importador desde otra carpeta. No necesitan PDFs privados, outputs históricos ni modelos. [Verificación](docs/VERIFICATION.md). [Auditoría de portabilidad](docs/PORTABILITY.md).
 
 Fuentes ficticias para demos: python -B examples/synthetic.py --output tmp/demo. No son ensayos reales ni resultados de IA. El release fija hashes; un cambio intencional exige regenerar con python -B scripts/release.py --write y preparar nuevas ejecuciones. No cambiar hashes para reanudar silenciosamente una corrida vieja.
 

@@ -1,4 +1,4 @@
-"""Small shared helpers. All writes are confined to the laboratory."""
+"""Shared helpers. Runtime writes stay in the explicitly selected workspace."""
 from __future__ import annotations
 
 import hashlib
@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKSPACE = None
-UPSTREAM = ROOT
+UPSTREAM = ROOT  # Compatibility alias for this bundle, not an external checkout.
 
 
 def now():

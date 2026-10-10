@@ -1,6 +1,6 @@
 # Atribuciones
 
-Código derivado del laboratorio PAESSED Test2/V1 y PAESSED (MIT, copyright 2026 PAESSED contributors); se preserva LICENSE.
+Código derivado del laboratorio PAESSED y PAESSED (MIT, copyright 2026 PAESSED contributors); se preserva LICENSE.
 
 JSZip: viewer/vendor/jszip/LICENSE.markdown (distribución bajo MIT).
 KaTeX: viewer/vendor/katex/LICENSE (MIT).

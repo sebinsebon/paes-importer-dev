@@ -9,7 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if __name__ == '__main__':
     p = argparse.ArgumentParser(); p.add_argument('--dev', action='store_true'); args = p.parse_args()
     if sys.version_info < (3, 12): raise SystemExit('Python 3.12+ required')
-    if not shutil.which('node'): raise SystemExit('Node.js 18+ required')
+    node = shutil.which('node')
+    if not node: raise SystemExit('Node.js 18+ required on PATH')
+    version = subprocess.run([node, '--version'], capture_output=True, text=True, check=True).stdout.strip()
+    if not version.startswith('v') or not version[1:].split('.')[0].isdigit() or int(version[1:].split('.')[0]) < 18:
+        raise SystemExit('Node.js 18+ required; found ' + version)
     environment = ROOT / '.venv'
     if environment.exists(): raise SystemExit('Environment exists; use its Python to install requirements')
     tmp = ROOT / 'tmp'; tmp.mkdir(exist_ok=True)

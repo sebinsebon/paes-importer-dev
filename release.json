@@ -16,7 +16,7 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "efc247c06b8954c9b2a67ab9bc007131f07cbef6d794cf08e04877625e1d66aa"
+      "sha256": "1f37dbd2c38e255ec21b2c353978396a8df65a789cd7f75d00ad349748d6c13d"
     },
     {
       "path": "LICENSE",
@@ -24,27 +24,31 @@
     },
     {
       "path": "NOTICE.md",
-      "sha256": "a3f483aecdc2f5cb518e14085ecec424fc4015df1ebf3f0182ae161f3a1ddf33"
+      "sha256": "6cf7d7e9e43243e3289edb9bf574a69c156a180c8ffc5397b1a895f0d0ea8fb1"
     },
     {
       "path": "README.md",
-      "sha256": "c9b86a3931ffe2cc96434d025f058b45b5fcf352a9b236808bb5caac24a60ff2"
+      "sha256": "4f0edaaa65548540ae42e32f0ecd9a9934a7c76c9f9492bcd2e5ed34d4ab61d7"
     },
     {
       "path": "SKILL.md",
-      "sha256": "b0bc24312f4961bd526b11795b976cc4ebc1e114054cb17bb84ead905da8eca6"
+      "sha256": "0f23b274ef7d48157b96769a4dddc4c0001fc7b2c19c27a0ade922f567bff057"
     },
     {
       "path": "docs/COMPATIBILITY.md",
-      "sha256": "b089fedee4d2b0d2cf77c6ed78792f6423a1524ce254534b4677aade9387e9b5"
+      "sha256": "1e26f5cef11f69351f4b671c87b2d91fb798ba41b5e0618b95f455b0b050cd8c"
     },
     {
       "path": "docs/DECISIONS.md",
-      "sha256": "f75322cfff404ce75bd665d367c2f69a07f3ea256c9e3445435eb4922d017056"
+      "sha256": "3a657f4dcca9bd6b57c4244866a94c39a31239e37816b75f751c3985de831bb5"
+    },
+    {
+      "path": "docs/PORTABILITY.md",
+      "sha256": "d689ebf343a9b6dd8b45a007bdaf12cb9df0b4d3ed096151305d75d86da10ad7"
     },
     {
       "path": "docs/VERIFICATION.md",
-      "sha256": "1637d9f0e383b24c7f64393c3a099a06719324ea10c05f59b61e9dd03e6fb805"
+      "sha256": "990270a9c17431ba62fb32e62684d3f4f2e0a434f8d16ad1fe28cabd7c3311a6"
     },
     {
       "path": "examples/synthetic.py",
@@ -60,7 +64,7 @@
     },
     {
       "path": "references/workflow.md",
-      "sha256": "ad24a6ed6cf315b6c49515039e5c0517a5a662d1c8a036000aeb20007a58bf2b"
+      "sha256": "a9d3e25795bd0378b36bfb1076c8cf28856e85f98744bde0ccfdfa31e6e35658"
     },
     {
       "path": "requirements-dev.txt",
@@ -92,11 +96,11 @@
     },
     {
       "path": "scripts/setup.py",
-      "sha256": "42a8a2373c25451934576393393151b8079d5a1547aa65c8aea802928b257b5a"
+      "sha256": "60aa0f79195e4114c399ee52c5d2ef525ed4b32fd38a7114bb40929b64b63425"
     },
     {
       "path": "scripts/verify.py",
-      "sha256": "c4bf9871cc2d002fe659367c9fde0ccbfcdede3a9f0059ed9a938c4f4f57c14b"
+      "sha256": "0552979e96cc9554739f4dcf298bfd08c84f6b997342306c0ccd80d12e31112b"
     },
     {
       "path": "shared/references/content-contract.md",
@@ -128,7 +132,7 @@
     },
     {
       "path": "shared/scripts/lab.py",
-      "sha256": "ae37870058350675456ad60059a186a82100dec289a7c16fc04150a61f4bcc3b"
+      "sha256": "613de5ba91b346378ed514c9685bf409d512adac92ac61aa72eb8262de3eb4cc"
     },
     {
       "path": "shared/scripts/package_io.py",
@@ -140,11 +144,15 @@
     },
     {
       "path": "shared/scripts/pipeline.py",
-      "sha256": "588bf7e7e1ec730df5d2a2998aad5a15e3500c68aacb8d3be33c3b837ab7f954"
+      "sha256": "529731e7552bd70ef889a1eb13746c0848fec12b8a745f5253633cdc150f534a"
     },
     {
       "path": "tests/test_importer.py",
       "sha256": "3c97805f1ac6b6733c9bde102f43907ae7ccae31c1c80b85d316510fc717e3b2"
+    },
+    {
+      "path": "tests/test_portability.py",
+      "sha256": "01e5dba8dd2f743d6f634cd75f624ecb8d3d92dac7710766977c897695b7ca43"
     },
     {
       "path": "viewer/package-reader.js",

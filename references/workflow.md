@@ -1,6 +1,6 @@
 # Operación portable
 
-Trabaja con este bundle, sin carpetas históricas de Test2. Python y Node realizan operaciones deterministas; el anfitrión aporta interpretación, lectura visual y solución. Instalación y comandos de prueba: [README](../README.md). Para formatos exactos de entradas: [interfaces](interfaces.md).
+Trabaja con el bundle completo de esta skill. Python y Node realizan operaciones deterministas; el anfitrión aporta interpretación, lectura visual y solución. Instalación y comandos de prueba: [README](../README.md). Para formatos exactos de entradas: [interfaces](interfaces.md).
 
 ## Preparación
 
@@ -12,7 +12,7 @@ Antes de preparar, el anfitrión pregunta el destino y observa las capacidades. 
 
 No uses el ejemplo como recibo de capacidad. Copia o adjunta el bundle completo; no solo SKILL.md.
 
-Desde cualquier directorio, invoca la ruta real del script con el Python de este bundle o un entorno que tenga requirements.txt instalado:
+Los comandos relativos de esta guía y de auditoría se ejecutan desde la carpeta que contiene SKILL.md, usando un Python con requirements.txt instalado. Desde otra carpeta, utiliza las rutas absolutas del intérprete y de scripts/importer.py. Los recursos internos se resuelven desde la skill; las rutas relativas de entrada se interpretan desde el directorio de ejecución. Usa rutas absolutas para los PDFs, JSON de trabajo y RUN cuando cambies de directorio:
 
 ~~~text
 python -B scripts/importer.py prepare --exam /ruta/ensayo.pdf --solution /ruta/pauta.pdf --host cli --client codex --session-id SESION_REAL --model MODELO_OBSERVADO --effort ESFUERZO_OBSERVADO --destination documents --capabilities /ruta/capabilities.json

@@ -1,4 +1,4 @@
-"""Local benchmark CLI. The host agent, not this script, performs inference."""
+"""Shared import controls. The host agent, not this script, performs inference."""
 from __future__ import annotations
 
 import argparse

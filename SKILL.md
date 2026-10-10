@@ -12,7 +12,7 @@ Recibe un ensayo PDF y, opcionalmente, su solucionario. Entrega el ZIP del contr
 
 ## Antes de procesar
 
-1. Lee [el flujo operativo](references/workflow.md). Comprueba acceso a estas referencias y scripts; un enlace a GitHub no los ejecuta. Si no puedes acceder al repositorio, solicita al usuario el bundle de la skill.
+1. Lee [el flujo operativo](references/workflow.md). Localiza la carpeta que contiene este SKILL.md y resuelve desde ella las referencias, scripts, schemas y validadores incluidos. Comprueba Python/Node y las dependencias según [instalación](README.md#instalación). No necesitas otros proyectos. Un enlace a GitHub no ejecuta el código; si no puedes acceder al repositorio, solicita al usuario el bundle completo de la skill.
 2. Inspecciona brevemente los archivos y determina si hay ensayo, solucionario separado o pauta integrada. Si solo hay un solucionario sin enunciados completos, falta el ensayo. Si hay varios ensayos o una asociación ambigua, pregunta cuál procesar. Esta versión cubre M1; informa si el documento pertenece a otra prueba.
 3. Confirma con una observación concreta que puedes leer las páginas y sus visuales, recortar recursos, ejecutar código, validar y producir un ZIP. El renderizador por sí solo no demuestra comprensión. Si falta una capacidad necesaria, informa el impedimento y conserva los avances; no prometas el ZIP ni sustituyas silenciosamente el resultado.
 4. Antes del procesamiento completo pregunta dónde guardar el resultado, salvo que ya exista un destino explícito:

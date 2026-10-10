@@ -6,7 +6,7 @@
 4. Registrar origen de explicaciones: reutilizar justificación, o generar explicación breve de IA si solo hay letras.
 5. Chat web ofrece ZIP descargable y pregunta preferencia de guardado, sin fingir escritura local. UI con selección si existe; fallback numerado si no.
 6. Autorrevisión no es independencia: conserva provisionales. La revisión independiente usa sesiones nuevas, evidencia y decisiones; tampoco garantiza verdad matemática.
-7. Reutilizar controles de V1, eliminando rutas/Test2/outputs privados. El trabajo está en un clon nuevo del repo dedicado; V1/V2 quedan intactos.
+7. Distribuir controles, schemas y validadores dentro de la skill. Resolver recursos internos desde su propia carpeta y entradas/salidas desde ubicaciones explícitas del usuario. Conservar los contratos de compatibilidad del viewer y del contenedor .paessed.
 8. Cierre acotado a M1. M2, Ciencias, Historia, Competencia Lectora, varios ensayos simultáneos e integración web requieren ampliación y pruebas.
 9. Conservar originales y reanudación: destinos por ejecución, mapa/ruta congelados, hashes, respuestas originales y versiones. No sobrescribir resultados publicados.
 10. Separar publicación del código y uso con contenido: bundle incluye motor, referencias, licencias y fixtures ficticios. PDFs reales/outputs privados quedan fuera. Implementación sin corridas reales de IA ni publicación automática a GitHub.
