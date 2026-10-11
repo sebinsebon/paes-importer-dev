@@ -78,7 +78,7 @@ def validate_structured_content(q):
     # Quality gates for deterministic corruption observed in real M1 imports.
     # Source fidelity still requires manual/AI visual comparison.
     for at, block in located_blocks(q):
-        if block['type'] == 'math' and re.search(r'(?<!\\)\\\\(?=[A-Za-z])', block['latex']):
+        if block['type'] == 'math' and re.search(r'(?<!\\)\\\\(?=(?:sqrt|frac|dfrac|tfrac|left|right|cdot|times|text|mathrm|begin|end|sum|int|sin|cos|tan|log|ln|pi|pm|leq|geq|neq|approx|infty)\b)', block['latex']):
             errors.append(f'{q["id"]}/{at}: DOUBLE_ESCAPED_LATEX_COMMAND; use one backslash before a KaTeX command')
     for option in q['options']:
         blocks = option['blocks']
