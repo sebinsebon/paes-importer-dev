@@ -12,15 +12,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "6e6590fe9d5ef8fc8d828b214d1db3e9546bdc7c2f245a4cec58e24b004249ba"
+      "sha256": "b55b0b36b401528a69a2f021339684571840037a514f84c08237f0e14c338c06"
     },
     {
       "path": "SKILL.md",
-      "sha256": "407090d0dc85db16d85e183748e931d4607552cd785e87a81e0a204853aba56c"
+      "sha256": "c50164cf506f595edc8eb9437de8560d02c16058a2ba95ad12c98906d47fba36"
     },
     {
       "path": "flows/01-chat-con-solucionario/WORKFLOW.md",
-      "sha256": "00e9d93b6207a68bfeba83771c386381df7086ff4b21cbd3ca8b47d3cc46f728"
+      "sha256": "20a23735d535813ca9486b7d9843af818868fc290693f8b199cca6da92f1f958"
     },
     {
       "path": "flows/02-cli-con-solucionario/WORKFLOW.md",
@@ -32,7 +32,7 @@
     },
     {
       "path": "flows/04-chat-sin-solucionario/WORKFLOW.md",
-      "sha256": "1bb716bf29214c6db199da0a5444b011f061d72444f34f591055b28f9d628409"
+      "sha256": "f7c181b51d4f481b22629095c6fb1020837f07616a79d64688f4c39624e17bef"
     },
     {
       "path": "references/audit.md",
@@ -48,7 +48,7 @@
     },
     {
       "path": "references/workflow.md",
-      "sha256": "a9b553faa359941827116c0cd3be36f8bc617fad297ec7d04ceab430950f7fb7"
+      "sha256": "91a6a46966ce4fc89ee8fada04c8165c0b3b97ab305c75bc7c203f3833332108"
     },
     {
       "path": "requirements.txt",
@@ -84,7 +84,7 @@
     },
     {
       "path": "shared/references/content-contract.md",
-      "sha256": "9dd48bbe7f3396d83189ce7c2bbc1f72df641a8e6e464967899fa5d07b35c374"
+      "sha256": "c7c2ac97465294346d59f2858940ae9990d38ca5e6bfede285a4be20306dd643"
     },
     {
       "path": "shared/references/package-contract.md",
@@ -116,7 +116,7 @@
     },
     {
       "path": "shared/scripts/package_io.py",
-      "sha256": "f5ccf6055cee69e189826e444074d7320e15272ee05fadfd7cb8f53d4df2fbf3"
+      "sha256": "e9b40c7064a714778ac6c45d137b8d5816a4832b9dd4d3ad2aa23b0b311caae0"
     },
     {
       "path": "shared/scripts/pdf_assets.py",
