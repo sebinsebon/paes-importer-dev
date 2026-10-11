@@ -8,3 +8,8 @@ Usa este flujo si falta pauta válida para alguna pregunta. Una pauta parcial v�
 4. Coteja las seis dimensiones de cada pregunta con la fuente usando `check-template` y `record-check`. Mantén estructura KaTeX, tablas, recortes, explicaciones completas y cobertura total; marca `unresolved` las dudas.
 5. Ejecuta `validate`. Si `independent_question_ids` está vacío, usa `pack` y describe la revisión como propia. Si contiene preguntas, sigue `baseline`, `verify prepare`, informes de agentes con contexto nuevo, `verify check`, decisiones explícitas y `verify consolidate` según auditoría. Solo se revisa independientemente el subconjunto sin pauta. Los agentes pueden aportar valor, pero no se simula independencia cuando no están disponibles.
 6. Ejecuta `inspect` y entrega ZIP/.paessed, cobertura, respuestas de pauta/modelo, tipo de revisión y pendientes. La revisión independiente tampoco garantiza corrección matemática.
+
+
+## Contrato curricular 0.2.0
+
+Toda nueva importación M1 incorpora questions[].curriculum = {eje, subeje, en_temario}. Clasificar automáticamente cada pregunta por su contenido usando los cuatro ejes y 16 subejes de shared/references/curriculum-m1.json; consultar shared/references/curriculum-contract.md para pertenencia, evidencia y pendientes. No copiar la taxonomía de TESLA ni inferir desde numeración. Cada lote añade curriculum_provenance[id] con reason y evidence [{source_id,page,observation}]. Clasificar también preguntas sin pauta o cuya resolución experimental se rechazó. Conservar la incertidumbre como dudoso; un par null requiere CURRICULUM_PENDING y entrega curricular parcial. Los lectores admiten finales históricos 0.1.0 sin inventar clasificación; el manifiesto del paquete sigue en 0.1.0.

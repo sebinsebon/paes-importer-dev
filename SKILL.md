@@ -31,3 +31,8 @@ PAESSED necesita una transcripción fiel de cada pregunta, con matemática, tabl
 Una pauta válida y parcial conserva sus respuestas y explicaciones cubiertas; el flujo 03 o 04 trata únicamente las preguntas pendientes. Si la asociación es ambigua, no inventes cobertura para elegir un flujo rápido. Elige el anfitrión por el lugar donde se realiza el trabajo: un chat web con ejecución de código sigue el flujo web.
 
 El [contrato de contenido](shared/references/content-contract.md) y el cotejo con el PDF rigen los cuatro flujos. Conserva las verificaciones de enunciados, alternativas, matemática, tablas, imágenes, respuestas y explicaciones. No promociones una autorrevisión o una pauta copiada a verified.
+
+
+## Contrato curricular 0.2.0
+
+Toda nueva importación M1 incorpora questions[].curriculum = {eje, subeje, en_temario}. Clasificar automáticamente cada pregunta por su contenido usando los cuatro ejes y 16 subejes de shared/references/curriculum-m1.json; consultar shared/references/curriculum-contract.md para pertenencia, evidencia y pendientes. No copiar la taxonomía de TESLA ni inferir desde numeración. Cada lote añade curriculum_provenance[id] con reason y evidence [{source_id,page,observation}]. Clasificar también preguntas sin pauta o cuya resolución experimental se rechazó. Conservar la incertidumbre como dudoso; un par null requiere CURRICULUM_PENDING y entrega curricular parcial. Los lectores admiten finales históricos 0.1.0 sin inventar clasificación; el manifiesto del paquete sigue en 0.1.0.

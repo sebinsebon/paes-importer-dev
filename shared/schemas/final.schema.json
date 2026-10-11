@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "PAESSED Test2 experimental final",
+  "title": "PAESSED final 0.2.0",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -19,7 +19,7 @@
       "const": "paessed-benchmark"
     },
     "schema_version": {
-      "const": "0.1.0"
+      "const": "0.2.0"
     },
     "pipeline": {
       "enum": [
@@ -353,7 +353,8 @@
         "answer",
         "explanation",
         "fidelity",
-        "issues"
+        "issues",
+        "curriculum"
       ],
       "properties": {
         "id": {
@@ -480,8 +481,35 @@
           "items": {
             "type": "string"
           }
+        },
+        "curriculum": {
+          "$ref": "#/$defs/curriculum"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "curriculum": {
+                "properties": {
+                  "eje": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "issues": {
+                "contains": {
+                  "const": "CURRICULUM_PENDING"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "resource": {
       "type": "object",
@@ -520,6 +548,111 @@
           "$ref": "#/$defs/bbox"
         }
       }
+    },
+    "curriculum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eje",
+        "subeje",
+        "en_temario"
+      ],
+      "properties": {
+        "eje": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "subeje": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "en_temario": {
+          "enum": [
+            "si",
+            "no",
+            "dudoso"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "eje": {
+              "type": "null"
+            },
+            "subeje": {
+              "type": "null"
+            },
+            "en_temario": {
+              "const": "dudoso"
+            }
+          }
+        },
+        {
+          "properties": {
+            "eje": {
+              "const": "Números"
+            },
+            "subeje": {
+              "enum": [
+                "Conjunto de los números enteros y racionales",
+                "Porcentaje",
+                "Potencias y raíces enésimas"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "eje": {
+              "const": "Álgebra y funciones"
+            },
+            "subeje": {
+              "enum": [
+                "Expresiones algebraicas",
+                "Proporcionalidad",
+                "Ecuaciones e inecuaciones de primer grado",
+                "Sistemas de ecuaciones lineales (2x2)",
+                "Función lineal y afín",
+                "Función cuadrática"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "eje": {
+              "const": "Geometría"
+            },
+            "subeje": {
+              "enum": [
+                "Figuras geométricas",
+                "Cuerpos geométricos",
+                "Transformaciones isométricas",
+                "Semejanza y proporcionalidad de figuras"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "eje": {
+              "const": "Probabilidad y estadística"
+            },
+            "subeje": {
+              "enum": [
+                "Representación de datos a través de tablas y gráficos",
+                "Medidas de posición",
+                "Reglas de las probabilidades"
+              ]
+            }
+          }
+        }
+      ]
     }
   }
 }

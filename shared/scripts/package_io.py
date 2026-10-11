@@ -23,6 +23,7 @@ MAX_BYTES = 256 * 1024 * 1024
 # These detect serialization syntax, not mathematical meaning or source fidelity.
 RAW_LATEX = re.compile(r'\\(?:[A-Za-z]+|[()\[\]_%{}^,;!: $&|#\\])')
 INLINE_DOLLARS = re.compile(r'(?<!\\)\$([^$\n]+)(?<!\\)\$(?!\d)')
+MONETARY_PREFIX = re.compile(r'\$\s*\d+(?:[ .]\d{3})*(?:[.,]\d+)?(?=\s*(?:[A-Za-zÁÉÍÓÚáéíóúÑñ¿¡]|[,.;:]|$))')
 TABLE_SEPARATOR_CELL = re.compile(r':?-{3,}:?')
 
 
@@ -67,18 +68,22 @@ def validate_structured_content(q):
     for at, block in located_blocks(q):
         if block['type'] == 'text':
             text = block['text']
+            if not text.strip():
+                errors.append(f'{q["id"]}/{at}: EMPTY_CONTENT')
             if markdown_table(text):
                 errors.append(f'{q["id"]}/{at}: MARKDOWN_TABLE_IN_TEXT; correct using table.rows')
-            if RAW_LATEX.search(text) or '$$' in text or INLINE_DOLLARS.search(text):
+            if RAW_LATEX.search(text) or '$$' in text or INLINE_DOLLARS.search(MONETARY_PREFIX.sub('', text)):
                 errors.append(f'{q["id"]}/{at}: LATEX_IN_TEXT; correct using math.latex/display')
         elif block['type'] == 'math':
             latex = block['latex'].strip()
+            if not latex:
+                errors.append(f'{q["id"]}/{at}: EMPTY_CONTENT')
             if latex.startswith(('$', r'\(', r'\[')) or latex.endswith(('$', r'\)', r'\]')):
                 errors.append(f'{q["id"]}/{at}: MATH_DELIMITERS; math.latex must omit delimiters')
     # Quality gates for deterministic corruption observed in real M1 imports.
     # Source fidelity still requires manual/AI visual comparison.
     for at, block in located_blocks(q):
-        if block['type'] == 'math' and re.search(r'(?<!\\)\\\\(?=(?:sqrt|frac|dfrac|tfrac|left|right|cdot|times|text|mathrm|begin|end|sum|int|sin|cos|tan|log|ln|pi|pm|leq|geq|neq|approx|infty)\b)', block['latex']):
+        if block['type'] == 'math' and not re.search(r'\\begin\{(?:aligned|align|cases|array|matrix|pmatrix|bmatrix)\}', block['latex']) and re.search(r'(?<!\\)\\\\(?=(?:vec|sqrt|frac|dfrac|tfrac|left|right|cdot|times|text|mathrm|begin|end|sum|int|sin|cos|tan|log|ln|pi|pm|leq|geq|neq|approx|infty)\b)', block['latex']):
             errors.append(f'{q["id"]}/{at}: DOUBLE_ESCAPED_LATEX_COMMAND; use one backslash before a KaTeX command')
     for option in q['options']:
         blocks = option['blocks']
@@ -97,7 +102,7 @@ def validate_structured_content(q):
 def renderable_math(formulas):
     if not formulas:
         return
-    result=subprocess.run(['node',str(ROOT/'shared/scripts/check_math.cjs')],input=json.dumps(formulas),
+    result=subprocess.run(['node',str(ROOT/'shared/scripts/check_math.cjs')],input=json.dumps([{'latex': latex, 'display': display} for latex, display in formulas]),
                           capture_output=True,text=True,encoding='utf-8',timeout=30,cwd=ROOT)
     if result.returncode:
         raise ValueError('KaTeX formula error: '+result.stderr[:600])
@@ -111,7 +116,11 @@ def unique(records, key, name):
 
 
 def validate(data, root=None, blob_reader=None):
-    errors = sorted(Draft202012Validator(read(SCHEMA)).iter_errors(data), key=lambda e: str(e.path))
+    version = data.get('schema_version')
+    if version not in ('0.1.0', '0.2.0'):
+        raise ValueError('Unsupported final schema_version')
+    schema = SCHEMA if version == '0.2.0' else SCHEMA.with_name('final-0.1.schema.json')
+    errors = sorted(Draft202012Validator(read(schema)).iter_errors(data), key=lambda e: str(e.path))
     if errors:
         raise ValueError('; '.join(f'{list(e.path)}: {e.message}' for e in errors[:6]))
     sources = unique(data['sources'], 'id', 'source IDs')
@@ -145,6 +154,9 @@ def validate(data, root=None, blob_reader=None):
                     raise ValueError(f'Invalid PNG: {path}')
     for q in data['questions']:
         validate_structured_content(q)
+        if version == '0.2.0':
+            from curriculum import validate_question_curriculum
+            validate_question_curriculum(q)
         source = sources.get(q['source_id'])
         if not source or source['role'] != 'exam':
             raise ValueError(f'Invalid question source: {q["id"]}')
@@ -162,10 +174,11 @@ def validate(data, root=None, blob_reader=None):
             raise ValueError(f'Duplicate option label: {q["id"]}')
         content = list(question_blocks(q))
         unresolved = any(b['type'] == 'unresolved' for b in content)
-        for block in content:
+        for at, block in located_blocks(q):
             if block['type'] == 'image':
                 resource = assets.get(block['asset_id'])
-                if not resource or resource['source_id'] != q['source_id']:
+                if not resource or (resource['source_id'] != q['source_id'] and
+                        (not at.startswith('explanation.') or sources[resource['source_id']]['role'] != 'solution')):
                     raise ValueError(f'Missing or wrong-source image: {q["id"]}/{block["asset_id"]}')
             if block['type'] == 'math' and (block['latex'].startswith('$') or block['latex'].endswith('$')):
                 raise ValueError(f'LaTeX must not have dollar delimiters: {q["id"]}')
@@ -190,12 +203,13 @@ def validate(data, root=None, blob_reader=None):
             raise ValueError(f'Verified explanation requires verified answer: {q["id"]}')
         if unresolved or q['fidelity']['status'] != 'reviewed' or answer['status'] != 'verified':
             warnings.append(f'{q["id"]}: revisión o resolución pendiente')
-    renderable_math(tuple(sorted({b['latex'] for q in data['questions'] for b in question_blocks(q) if b['type']=='math'})))
+    renderable_math(tuple(sorted({(b['latex'], b['display']) for q in data['questions'] for b in question_blocks(q) if b['type']=='math'})))
     result=subprocess.run(['node',str(ROOT/'shared/scripts/check_final.cjs')],input=json.dumps(data),
                           capture_output=True,text=True,encoding='utf-8',timeout=30,cwd=ROOT)
     if result.returncode:
         raise ValueError('Viewer contract: '+result.stderr[:600])
-    return {'valid': True, 'questions': len(questions), 'assets': len(assets), 'warnings': warnings,
+    from quality import summarize
+    return {'valid': True, 'questions': len(questions), 'assets': len(assets), 'warnings': warnings, 'quality': summarize(data),
             'semantic_correctness': 'not_proven_by_structural_validation'}
 
 

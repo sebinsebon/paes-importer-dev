@@ -7,6 +7,7 @@ import re
 import shutil
 import sys
 import time
+from functools import wraps
 from datetime import datetime
 from pathlib import Path
 
@@ -14,12 +15,23 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'shared/scripts'))
 from lab import configure_workspace, artifact_path, digest, inside, json_digest, now, question_blocks, read, write, reserve_output, publication_path, output_path
 from package_io import pack, validate
+from evidence import overlaps
+from quality import summarize, require_publishable
 from pdf_assets import render_crop
 import pypdfium2 as pdfium
 
 CHECKS = ('stem', 'options', 'assets_math', 'answer', 'explanation', 'consistency')
-FIELDS = {'stem', 'options', 'regions', 'answer', 'explanation', 'issues'}
+FIELDS = {'stem', 'options', 'regions', 'answer', 'explanation', 'issues', 'curriculum'}
 USAGE = ('duration_seconds', 'input_tokens', 'output_tokens', 'total_tokens', 'model_calls', 'cost_usd')
+
+def reading_operation(function):
+    @wraps(function)
+    def locked(folder, *args, **kwargs):
+        from checkpoints import state_lock
+        with state_lock(inside(folder),'reading-state.lock'):
+            return function(folder, *args, **kwargs)
+    return locked
+
 
 def new(path, value):
     path = inside(path)
@@ -50,7 +62,14 @@ def copy_resource(source, target):
     shutil.copyfile(source, target)
 
 def binding(folder):
+    from checkpoints import state_lock
+    with state_lock(inside(folder),'reading-state.lock'):
+        return _binding(folder)
+
+def _binding(folder):
     folder = inside(folder)
+    from checkpoints import recover
+    recover(folder,'reading-transition.json')
     run = read(folder / 'run.json')
     parent = Path(run['parent']['path'])
     if digest(parent / 'final.json') != run['parent']['final_sha256']:
@@ -113,7 +132,7 @@ def prepare(parent, run_id, batch_size=10, model='unknown', effort='unknown', se
     for asset in baseline['assets'] + baseline['evidence']:
         copy_resource(artifact_path(parent, asset['path']), folder / asset['path'])
     run = {'id': run_id, 'pipeline': 'pdf-direct', 'variant': 'direct-verified',
-           'protocol_version': 'direct-verification-1.0', 'purpose': 'paired-experiment',
+           'protocol_version': 'direct-verification-2.0' if baseline['schema_version'] == '0.2.0' else 'direct-verification-1.0', 'purpose': 'paired-experiment',
            'started_at': started_at, 'status': 'preparing', 'model': model, 'effort': effort,
            'session_id': session, 'batch_size': batch_size, 'output_dir': str(destination),
            'parent': {'path': str(parent), 'id': parent_run['id'], 'final_sha256': digest(parent / 'final.json'),
@@ -134,12 +153,12 @@ def prepare(parent, run_id, batch_size=10, model='unknown', effort='unknown', se
         batch_id = f'batch-{offset // batch_size + 1:02d}'
         batch = folder / 'batches' / batch_id
         selected = questions[offset:offset + batch_size]
-        used = {b['asset_id'] for q in selected for b in question_blocks(q) if b['type'] == 'image'}
+        used = {b['asset_id'] for q in selected for b in __import__('lab').blocks_in(q['stem'] + [b for o in q['options'] for b in o['blocks']]) if b['type'] == 'image'}
         assets = [a for a in baseline['assets'] if a['id'] in used]
         evidence = []
         # Only physical pages needed by this batch; render source PDF, not extracted assets.
         pages = {(q['source_id'], r['page']) for q in selected for r in q['regions']}
-        pages |= {(a['source_id'], a['page']) for a in assets}
+        pages |= {(a['source_id'], a['page']) for a in assets if any(a['source_id'] == q['source_id'] for q in selected)}
         for source_id, page_no in sorted(pages):
             with pdfium.PdfDocument(str(paths[source_id])) as pdf:
                 page = pdf[page_no - 1]
@@ -155,8 +174,17 @@ def prepare(parent, run_id, batch_size=10, model='unknown', effort='unknown', se
         packet = {'format': 'direct-verification-batch-1.0', 'batch_id': batch_id,
                   'baseline_sha256': run['parent']['final_sha256'], 'questions': selected,
                   'assets': assets, 'evidence': evidence, 'checks': list(CHECKS)}
+        if baseline['schema_version'] == '0.2.0':
+            packet = {'format': 'source-reading-batch-0.2', 'batch_id': batch_id, 'stage': 'source-reading',
+                      'questions': [{k: q[k] for k in ('id', 'source_id', 'number', 'regions')} for q in selected],
+                      'assets': [], 'evidence': evidence, 'checks': ['stem', 'options', 'assets_math']}
+            new(batch/'reading-template.json', {'batch_id': batch_id, 'input_sha256': json_digest(packet),
+                'reviewer': {'id': '', 'session_id': '', 'model': '', 'effort': '', 'fresh_context': False},
+                'questions': [{'id': q['id'], 'source_id': q['source_id'], 'number': q['number'],
+                               'regions': q['regions'], 'stem': [], 'options': [], 'evidence': []} for q in selected]})
         new(batch / 'input.json', packet)
-        new(batch / 'report-template.json', report_template(packet))
+        if baseline['schema_version'] == '0.1.0':
+            new(batch / 'report-template.json', report_template(packet))
         run['batches'].append(batch_id)
         for path in [batch / 'input.json', *(batch / e['path'] for e in evidence),
                      *(batch / a['path'] for a in assets)]:
@@ -168,6 +196,7 @@ def prepare(parent, run_id, batch_size=10, model='unknown', effort='unknown', se
         'usage': {k: None for k in USAGE}, 'parallel_agents_peak': None, 'retries': None})
     return str(folder)
 
+@reading_operation
 def add_evidence(folder, batch_id, requests):
     run, baseline = binding(folder)
     if run['status'] != 'awaiting_reviews' or batch_id not in run['batches']:
@@ -176,6 +205,8 @@ def add_evidence(folder, batch_id, requests):
     if (batch / 'report.json').exists():
         raise ValueError('Preserve completed reports; extra evidence needs a new experiment')
     packet = read(batch / 'input.json')
+    if packet.get('stage') == 'source-reading':
+        raise ValueError('Commit independent reading before adding comparison evidence')
     paths = read(Path(run['parent']['path']) / 'sources.local.json')
     sources = {s['id']: s for s in baseline['sources']}
     qids = {q['id']: q for q in packet['questions']}
@@ -217,6 +248,78 @@ def add_evidence(folder, batch_id, requests):
     run['inputs'][(batch / 'input.json').relative_to(folder).as_posix()] = digest(batch / 'input.json')
     write(folder / 'run.json', run)
 
+def commit_reading(folder, batch_id, response_file):
+    from checkpoints import state_lock
+    with state_lock(inside(folder),'reading-state.lock'):
+        return _commit_reading(folder,batch_id,response_file)
+
+def _commit_reading(folder, batch_id, response_file):
+    """Freeze an independent source transcription before revealing the candidate."""
+    run, baseline = _binding(folder)
+    original_run = (folder/'run.json').read_bytes()
+    if run['status'] != 'awaiting_reviews' or batch_id not in run['batches']:
+        raise ValueError('Unknown or completed reading batch')
+    batch = inside(folder/'batches'/batch_id)
+    packet = read(batch/'input.json')
+    if packet.get('stage') != 'source-reading' or (batch/'reading.json').exists():
+        raise ValueError('Reading already committed; preserve it')
+    response = read(response_file)
+    if response.get('batch_id') != batch_id or response.get('input_sha256') != json_digest(packet):
+        raise ValueError('Reading input binding mismatch')
+    reviewer = response.get('reviewer', {})
+    parent_session = read(Path(run['parent']['path'])/'run.json').get('session_id')
+    if (reviewer.get('fresh_context') is not True or not all(reviewer.get(k) for k in ('id', 'session_id', 'model', 'effort')) or
+            reviewer['session_id'] in (parent_session, run['session_id'], 'unknown')):
+        raise ValueError('Reading requires identified independent fresh context')
+    rows = response.get('questions', [])
+    identities = {q['id']: q for q in packet['questions']}
+    if len(rows) != len(identities) or {q.get('id') for q in rows} != set(identities):
+        raise ValueError('Independent reading coverage mismatch')
+    known = {e['path']: e for e in packet['evidence']}
+    proposal = copy.deepcopy(baseline)
+    proposal['questions'] = []
+    proposal['exam']['expected_questions'] = [q for q in baseline['exam']['expected_questions'] if q['id'] in identities]
+    for row in rows:
+        if set(row) != {'id', 'source_id', 'number', 'regions', 'stem', 'options', 'evidence'}:
+            raise ValueError('Reading permits source transcription only, without answer or explanation')
+        if any(row[k] != identities[row['id']][k] for k in ('source_id', 'number')):
+            raise ValueError('Reading changed frozen identity')
+        if not row['evidence']:
+            raise ValueError('Independent reading needs source evidence')
+        for ref in row['evidence']:
+            resource = known.get(ref.get('path'))
+            if (not resource or ref.get('sha256') != resource['sha256'] or not ref.get('observation') or
+                    resource['source_id'] != row['source_id'] or resource['page'] not in {r['page'] for r in row['regions']}):
+                raise ValueError('Independent reading evidence outside question source/regions')
+        from pipeline import empty_question
+        q = empty_question(row)
+        q.update({k: copy.deepcopy(row[k]) for k in ('regions', 'stem', 'options')})
+        proposal['questions'].append(q)
+    validate(proposal)
+    from evidence import validate_geometry
+    validate_geometry(proposal, read(Path(run['parent']['path'])/'catalog.json'))
+    from checkpoints import commit, json_bytes
+    prefix = batch.relative_to(folder).as_posix()+'/'
+    reading_bytes = json_bytes(response)
+    reading_sha = __import__('hashlib').sha256(reading_bytes).hexdigest()
+    selected = [q for q in baseline['questions'] if q['id'] in identities]
+    asset_ids = {b['asset_id'] for q in selected for b in question_blocks(q) if b['type'] == 'image'}
+    revealed = {'format':'direct-verification-batch-1.0','batch_id':batch_id,
+                'baseline_sha256':run['parent']['final_sha256'],'stage':'comparison','questions':selected,
+                'assets':[a for a in baseline['assets'] if a['id'] in asset_ids],
+                'evidence':packet['evidence'],'checks':list(CHECKS),'reading_sha256':reading_sha}
+    template = report_template(revealed)
+    template['reading_sha256'] = reading_sha
+    template['reviewer'] = copy.deepcopy(reviewer)
+    updates = {prefix+'reading.json':reading_bytes,prefix+'source-input.json':json_bytes(packet),
+               prefix+'input.json':json_bytes(revealed),prefix+'report-template.json':json_bytes(template)}
+    for relative in ('reading.json','source-input.json','input.json'):
+        run['inputs'][prefix+relative] = __import__('hashlib').sha256(updates[prefix+relative]).hexdigest()
+    updates['run.json'] = json_bytes(run)
+    commit(folder,updates,original_run,commit_point='run.json',journal_name='reading-transition.json')
+    return {'batch_id':batch_id,'stage':'comparison','reading_sha256':reading_sha}
+
+
 def report_template(packet):
     return {'format': 'direct-verification-report-1.0', 'batch_id': packet['batch_id'],
             'input_sha256': json_digest(packet),
@@ -227,6 +330,7 @@ def report_template(packet):
                            'changes': [], 'post_checks': {k: 'unresolved' for k in CHECKS}}
                           for q in packet['questions']]}
 
+@reading_operation
 def load_reports(folder):
     run, baseline = binding(folder)
     reports = []
@@ -234,7 +338,15 @@ def load_reports(folder):
     for batch_id in run['batches']:
         batch = folder / 'batches' / batch_id
         packet = read(batch / 'input.json')
+        if packet.get('stage') == 'source-reading':
+            raise ValueError('Independent source reading not committed')
         report = read(batch / 'report.json')
+        if baseline['schema_version'] == '0.2.0':
+            reading = read(batch/'reading.json')
+            if (report.get('reading_sha256') != packet.get('reading_sha256') or
+                    digest(batch/'reading.json') != packet['reading_sha256'] or
+                    report.get('reviewer') != reading['reviewer']):
+                raise ValueError('Independent reading/report reviewer binding mismatch')
         if report.get('format') != 'direct-verification-report-1.0' or report.get('batch_id') != batch_id or report.get('input_sha256') != json_digest(packet):
             raise ValueError('Report/input binding mismatch')
         reviewer = report['reviewer']
@@ -249,21 +361,24 @@ def load_reports(folder):
         if len(rows) != len(original) or {q['id'] for q in rows} != set(original):
             raise ValueError('Batch coverage mismatch')
         known = {e['path']: e for e in packet['evidence'] + packet['assets']}
-        def evidence(refs):
+        def evidence(refs, question=None):
             if not refs:
                 raise ValueError('Judgement/correction needs source evidence')
             for ref in refs:
                 record = known.get(ref.get('path'))
                 if not record or ref.get('sha256') != record['sha256'] or not ref.get('observation'):
                     raise ValueError('Evidence must bind an observed batch resource hash')
+                if question is not None and (record['source_id'] != question['source_id'] or not any(
+                        record['page'] == r['page'] and overlaps(record['bbox'], r['bbox']) for r in question['regions'])):
+                    raise ValueError('Comparison evidence must cover question source region')
         for row in rows:
             if set(row['checks']) != set(CHECKS) or set(row['post_checks']) != set(CHECKS):
                 raise ValueError('Six checks required')
-            for check in row['checks'].values():
+            for dimension, check in row['checks'].items():
                 if check['status'] not in ('pass', 'error', 'unresolved') or not check['reason']:
                     raise ValueError('Invalid check judgement')
                 if check['status'] != 'unresolved':
-                    evidence(check['evidence'])
+                    evidence(check['evidence'], original[row['id']] if dimension in ('stem', 'options', 'assets_math') else None)
             if any(s not in ('pass', 'unresolved') for s in row['post_checks'].values()):
                 raise ValueError('Invalid post check')
             solution = row['independent_solution']
@@ -297,12 +412,17 @@ def load_reports(folder):
                 question[change['field']] = copy.deepcopy(change['after'])
             proposal['questions'].append(question)
         validate(proposal)
+        from evidence import validate_mapping, validate_geometry
+        parent = Path(run['parent']['path'])
+        validate_mapping(proposal, read(parent/'selection.json'))
+        validate_geometry(proposal, read(parent/'catalog.json'))
         reports.append((batch_id, report))
     audited = [q['id'] for _, report in reports for q in report['questions']]
     if len(audited) != len(set(audited)) or set(audited) != set(run['target_question_ids']):
         raise ValueError('Independent coverage differs from frozen target questions')
     return run, baseline, reports
 
+@reading_operation
 def decisions(folder):
     run, baseline, reports = load_reports(folder)
     new(folder / 'decisions-template.json', {'baseline_sha256': run['parent']['final_sha256'],
@@ -312,6 +432,7 @@ def decisions(folder):
          'accept': False, 'reason': '', 'evidence': []}
         for bid, report in reports for row in report['questions'] for c in row['changes']]})
 
+@reading_operation
 def consolidate(folder, decision_file):
     start = time.perf_counter()
     run, baseline, reports = load_reports(folder)
@@ -376,7 +497,62 @@ def consolidate(folder, decision_file):
                 if q['explanation']['blocks']:
                     q['explanation']['status'] = 'provisional'
                 q['issues'].append('Verificación experimental: discrepancia o evidencia insuficiente; revisar informe ' + ref)
+                if any(c['status'] == 'error' for c in row['checks'].values()):
+                    q['issues'].append('CRITICAL:REVIEW_CONFLICT')
                 unresolved += 1
+    # A revised key must not retain provenance from a different frozen key label.
+    key_path = Path(run['parent']['path'])/'answer-key-map.json'
+    keys = {e['question_id']:e for e in read(key_path)['entries']} if key_path.exists() else {}
+    for q in final['questions']:
+        if q['answer']['origin'] == 'answer-key' and (q['id'] not in keys or q['answer']['label'] != keys[q['id']]['label']):
+            raise ValueError('Revised answer conflicts with frozen answer-key provenance; adjudicate explicitly')
+    # Content corrections invalidate curriculum independently of mathematical review.
+    if final['schema_version'] == '0.2.0':
+        import pipeline as engine
+        from curriculum import curriculum_hash, pending_curriculum, prepare_ledger
+        parent_ledger_path = Path(run['parent']['path'])/'curriculum-ledger.json'
+        ledger = read(parent_ledger_path) if parent_ledger_path.exists() else {}
+        updates = []
+        provenance = {}
+        by_report = {row['id']:(bid,row) for bid,report in reports for row in report['questions']}
+        for q in final['questions']:
+            old = ledger.get(q['id'], {})
+            if old.get('curriculum_sha256') == curriculum_hash(q,engine.content_hash(q,final,folder)):
+                continue
+            report_pair = by_report.get(q['id'])
+            change = next((c for c in report_pair[1]['changes'] if c['field'] == 'curriculum' and
+                           (report_pair[0],q['id'],'curriculum') in accepted),None) if report_pair else None
+            if change and q['curriculum']['eje'] is not None:
+                packet = read(folder/'batches'/report_pair[0]/'input.json')
+                known = {r['path']:r for r in packet['evidence']+packet['assets']}
+                provenance[q['id']] = {'reason':change['reason'],'evidence':[
+                    {'source_id':known[e['path']]['source_id'],'page':known[e['path']]['page'],'observation':e['observation']}
+                    for e in change['evidence']]}
+            else:
+                q['curriculum'] = pending_curriculum()
+                if 'CURRICULUM_PENDING' not in q['issues']: q['issues'].append('CURRICULUM_PENDING')
+            updates.append(q)
+        if updates:
+            ledger = prepare_ledger(final,{'questions':updates,'curriculum_provenance':provenance},engine.content_hash,folder,ledger)
+        write(folder/'curriculum-ledger.json',ledger)
+    final_quality = summarize(final)
+    for bid, report in reports:
+        for row in report['questions']:
+            for dimension, status in row['post_checks'].items():
+                if status != 'pass':
+                    final_quality['issues'].append({'question_id':row['id'],'field':dimension,'code':'INDEPENDENT_UNRESOLVED','severity':'warning'})
+                    if final_quality['publication_eligibility'] != 'blocked': final_quality['publication_eligibility'] = 'partial'
+    target_ids = set(run['target_question_ids'])
+    known = {(i['question_id'],i['field'],i['code']) for i in final_quality['issues']}
+    for issue in baseline['run'].get('quality',{}).get('issues',[]):
+        identity = (issue['question_id'],issue['field'],issue['code'])
+        if issue['question_id'] not in target_ids and identity not in known:
+            final_quality['issues'].append(copy.deepcopy(issue));known.add(identity)
+            if issue['severity'] == 'critical': final_quality['publication_eligibility'] = 'blocked'
+            elif issue['code'].startswith('COTEJO_') or issue['code'] == 'MAPPING_PENDING':
+                if final_quality['publication_eligibility'] != 'blocked': final_quality['publication_eligibility'] = 'partial'
+    require_publishable(final_quality)
+    final['run']['quality'] = final_quality
     # Compatible v1 container; experimental metadata is in extensible run, never schema changes.
     final['run'].update(id=run['id'], created_at=now(), verification_variant='direct-verified',
                         verification_model=run['model'], verification_effort=run['effort'],
@@ -385,6 +561,7 @@ def consolidate(folder, decision_file):
     output = publication_path(folder)
     for resource in final['assets'] + final['evidence']:
         copy_resource(artifact_path(folder, resource['path']), output / resource['path'])
+    if final['schema_version'] == '0.2.0': new(output/'curriculum-ledger.json',ledger)
     new(output / 'candidate.json', final)
     new(folder / 'decisions-applied.json', decision)
     result = pack(output / 'candidate.json')
@@ -425,9 +602,11 @@ def main():
     a.add_argument('--batch-size', type=int, default=10)
     for key in ('model', 'effort', 'session'):
         a.add_argument('--' + key, required=True)
-    for name in ('check', 'decisions', 'consolidate'):
+    for name in ('check', 'decisions', 'consolidate', 'commit-reading'):
         c = sub.add_parser(name); c.add_argument('--run', required=True)
         if name == 'consolidate': c.add_argument('--decisions', required=True)
+        if name == 'commit-reading':
+            c.add_argument('--batch', required=True); c.add_argument('--response', required=True)
     e = sub.add_parser('add-evidence')
     e.add_argument('--run', required=True); e.add_argument('--batch', required=True)
     e.add_argument('--requests', required=True)
@@ -436,6 +615,7 @@ def main():
     try:
         if args.command == 'prepare':
             print(prepare(args.parent, args.run_id, args.batch_size, args.model, args.effort, args.session, args.output_dir))
+        elif args.command == 'commit-reading': print(commit_reading(inside(args.run), args.batch, args.response))
         elif args.command == 'check':
             _, _, reports = load_reports(inside(args.run)); print(f'{len(reports)} bound reports; semantic claims remain AI judgements')
         elif args.command == 'decisions': decisions(inside(args.run))

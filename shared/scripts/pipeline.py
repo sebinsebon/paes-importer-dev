@@ -16,11 +16,20 @@ from pathlib import Path
 from lab import ROOT, UPSTREAM, artifact_path, digest, event, inside, json_digest, now, read, write, blocks_in, reserve_output
 from package_io import inspect_package, pack, validate
 from pdf_assets import apply_crops, prepare_catalog, source_record
+from curriculum import pending_curriculum, prepare_ledger, curriculum_hash
+from checkpoints import recover as recover_ingest, commit as commit_ingest, json_bytes
+from evidence import validate_geometry, validate_mapping
 
 
 
 def verify_resume(run_dir):
+    from checkpoints import state_lock
+    with state_lock(inside(run_dir)):
+        return _verify_resume(run_dir)
+
+def _verify_resume(run_dir):
     folder = inside(run_dir)
+    recover_ingest(folder)
     run = read(folder/'run.json')
     if run.get('release_sha256'):
         if digest(ROOT/'release.json') != run['release_sha256']:
@@ -47,38 +56,102 @@ def verify_release():
             raise ValueError('Frozen laboratory file changed: '+record['path'])
     return digest(path)
 
-def ingest(run_dir, response_path):
+def ingest(run_dir, response_path, raw_response_bytes=None, explanation_provenance=None):
+    from checkpoints import state_lock
+    with state_lock(inside(run_dir)):
+        return _ingest(run_dir,response_path,raw_response_bytes,explanation_provenance)
+
+def _ingest(run_dir, response_path, raw_response_bytes=None, explanation_provenance=None):
     folder=inside(run_dir)
-    verify_resume(folder)
-    response=read(response_path)
-    candidate=read(folder/'candidate.json')
+    _verify_resume(folder)
+    if (folder/'run.json').exists() and (read(folder/'run.json')['status'] != 'awaiting_ai' or (folder/'final.json').exists()):
+        raise ValueError('Preserve finalized candidates; use a new run')
+    response_bytes=Path(response_path).read_bytes()
+    response=json.loads(response_bytes.decode('utf-8-sig'))
+    original_bytes=(folder/'candidate.json').read_bytes()
+    candidate=json.loads(original_bytes.decode('utf-8-sig'))
     if response.get('run_id') != candidate['run']['id']:
         raise ValueError('AI response belongs to a different run')
     questions=response.get('questions', [])
-    if not questions or len({q['id'] for q in questions}) != len(questions):
+    if not isinstance(questions,list) or not questions or any(not isinstance(q,dict) or not isinstance(q.get('id'),str) for q in questions) or len({q['id'] for q in questions}) != len(questions):
         raise ValueError('AI batch must have unique questions')
     existing={q['id']:q for q in candidate['questions']}
-    for q in questions:
-        if q['id'] not in existing:
-            raise ValueError('AI question outside frozen selection')
-        if q['fidelity']['status']=='reviewed' or q['answer']['status']=='verified' or q['explanation']['status']=='verified':
-            raise ValueError('Ingest provisional content; record independent reviews separately')
-        prior=existing[q['id']]
-        if content_hash(q,candidate,folder)==content_hash(prior,candidate,folder):
-            q['fidelity']=copy.deepcopy(prior['fidelity'])
-            if solution_hash(q,candidate,folder)==solution_hash(prior,candidate,folder):
-                q['answer']=copy.deepcopy(prior['answer'])
-                q['explanation']=copy.deepcopy(prior['explanation'])
-        existing[q['id']]=q
-    candidate['questions']=[existing[q['id']] for q in candidate['questions']]
-    validate(candidate,folder)
+    if any(q['id'] not in existing for q in questions):
+        raise ValueError('AI question outside frozen selection')
+    provenance=response.get('curriculum_provenance',{})
+    if not isinstance(provenance,dict) or not set(provenance).issubset({q['id'] for q in questions}):
+        raise ValueError('Curriculum provenance must refer only to batch questions')
+    prior_ledger=read(folder/'curriculum-ledger.json') if (folder/'curriculum-ledger.json').exists() else {}
+    ledger=copy.deepcopy(prior_ledger)
+    accepted=[]; rejected=[]; unchanged=[]
+    for proposed in questions:
+        q=copy.deepcopy(proposed)
+        try:
+            if q['fidelity']['status']=='reviewed' or q['answer']['status']=='verified' or q['explanation']['status']=='verified':
+                raise ValueError('Ingest provisional content; record independent reviews separately')
+            if q['fidelity']['status'] not in ('pending','rejected') or q['answer']['status'] not in ('missing','provisional') or q['explanation']['status'] not in ('missing','provisional'):
+                raise ValueError('Invalid provisional review status')
+            prior=existing[q['id']]
+            same_content=content_hash(q,candidate,folder)==content_hash(prior,candidate,folder)
+            same_solution=solution_hash(q,candidate,folder)==solution_hash(prior,candidate,folder)
+            if same_content:
+                q['fidelity']=copy.deepcopy(prior['fidelity'])
+                if same_solution:
+                    q['answer']=copy.deepcopy(prior['answer'])
+                    q['explanation']=copy.deepcopy(prior['explanation'])
+            else:
+                q['fidelity']={'status':'pending','review_ref':None}
+            if not same_solution:
+                q['answer']['status']='provisional' if q['answer']['label'] is not None else 'missing'
+                q['explanation']['status']='provisional' if q['explanation']['blocks'] else 'missing'
+            tentative=copy.deepcopy(candidate)
+            tentative['questions']=[q if old['id']==q['id'] else old for old in candidate['questions']]
+            validate(tentative,folder)
+            if (folder/'catalog.json').exists(): validate_geometry(tentative,read(folder/'catalog.json'))
+            if (folder/'selection.json').exists() and tentative['schema_version'] == '0.2.0': validate_mapping(tentative,read(folder/'selection.json'))
+            # Exact retries preserve the original rationale and create no archives.
+            if q==prior and (tentative['schema_version']!='0.2.0' or ledger.get(q['id'],{}).get('curriculum_sha256')==curriculum_hash(q,content_hash(q,tentative,folder))):
+                unchanged.append(q['id']); continue
+            new_ledger=ledger
+            if tentative['schema_version']=='0.2.0':
+                subset={**response,'questions':[q], 'curriculum_provenance':{qid:r for qid,r in response.get('curriculum_provenance',{}).items() if qid==q['id']}}
+                new_ledger=prepare_ledger(tentative,subset,content_hash,folder,ledger)
+            candidate=tentative
+            ledger=new_ledger
+            existing[q['id']]=q
+            accepted.append(q['id'])
+        except (ValueError,KeyError,TypeError) as exc:
+            rejected.append({'question_id':proposed['id'],'reason':str(exc)})
+    if rejected and not accepted and not unchanged:
+        raise ValueError('No questions accepted: '+ '; '.join(r['question_id']+': '+r['reason'] for r in rejected))
+    result={'accepted':accepted,'rejected':rejected,'unchanged':unchanged,'questions_updated':len(accepted),'archive':None}
+    if not accepted: return result
     stamp=str(time.time_ns())
-    write(folder/f'versions/candidate-before-{stamp}.json',read(folder/'candidate.json'))
-    archive=inside(folder/f'reports/ai/{stamp}.json');archive.parent.mkdir(parents=True,exist_ok=True)
-    archive.write_bytes(Path(response_path).read_bytes())
-    write(folder/'candidate.json',candidate)
-    event(folder,'ai_batch_ingested',notes=f'{len(questions)} questions; {archive.name}')
-    return {'questions_updated':len(questions),'archive':str(archive)}
+    candidate['run']['ingest_transaction'] = stamp
+    archive='reports/ai/'+stamp+'.json'
+    checkpoint=read(folder/'ingest-checkpoints.json') if (folder/'ingest-checkpoints.json').exists() else {}
+    for qid in accepted:
+        q=existing[qid]
+        checkpoint[qid]={'content_sha256':content_hash(q,candidate,folder),'solution_sha256':solution_hash(q,candidate,folder),
+                         'curriculum_sha256':ledger.get(qid,{}).get('curriculum_sha256'),'archive':archive,'status':'accepted'}
+    updates={'candidate.json':json_bytes(candidate),'ingest-checkpoints.json':json_bytes(checkpoint),
+             'versions/candidate-before-'+stamp+'.json':original_bytes,archive:response_bytes}
+    if candidate['schema_version']=='0.2.0':updates['curriculum-ledger.json']=json_bytes(ledger)
+    if raw_response_bytes is not None:
+        updates['raw/'+stamp+'.json'] = raw_response_bytes
+    if explanation_provenance is not None:
+        provenance_path = folder/'explanation-provenance.json'
+        saved = read(provenance_path) if provenance_path.exists() else {}
+        for qid in accepted:
+            saved[qid] = explanation_provenance.get(qid, {'origin':'none'})
+        updates['explanation-provenance.json'] = json_bytes(saved)
+    events=folder/'events.jsonl'
+    old_events=events.read_bytes() if events.exists() else b''
+    entry={'timestamp':now(),'stage':'ai_batch_ingested','kind':'measured','notes':str(len(accepted))+' questions; '+archive}
+    updates['events.jsonl']=old_events+(json.dumps(entry,ensure_ascii=False)+'\n').encode('utf-8')
+    commit_ingest(folder,updates,original_bytes)
+    result['archive']=str(folder/archive)
+    return result
 
 
 def empty_question(expected):
@@ -86,11 +159,11 @@ def empty_question(expected):
             'stem': [{'type': 'unresolved', 'reason': 'Pendiente de lectura y reconstrucción por el CLI'}],
             'options': [], 'answer': {'label': None, 'status': 'missing', 'origin': 'none', 'source_ref': None},
             'explanation': {'blocks': [], 'status': 'missing'},
-            'fidelity': {'status': 'pending', 'review_ref': None}, 'issues': ['NOT_PROCESSED']}
+            'fidelity': {'status': 'pending', 'review_ref': None}, 'curriculum': pending_curriculum(), 'issues': ['NOT_PROCESSED', 'CURRICULUM_PENDING']}
 
 
 def initial_candidate(run, suite, sources):
-    return {'format': 'paessed-benchmark', 'schema_version': '0.1.0', 'pipeline': run['pipeline'],
+    return {'format': 'paessed-benchmark', 'schema_version': '0.2.0', 'pipeline': run['pipeline'],
             'run': {'id': run['id'], 'cli': run['cli'], 'model': run['model'], 'created_at': now(),
                     'variant': run['variant'], 'protocol_version': run['protocol_version'], 'eligible': run['eligible'],
                     'suite_sha256': run['suite_sha256'], 'config_hash': run['config_hash'],
@@ -129,21 +202,17 @@ def solution_hash(q, candidate=None, root=None):
 
 
 def record_review(run_dir, path):
-    run_dir = inside(run_dir)
-    lock = inside(run_dir / '.review.lock')
-    handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    try:
-        return _record_review(run_dir,path)
-    finally:
-        os.close(handle)
-        lock.unlink(missing_ok=True)
+    from checkpoints import state_lock
+    with state_lock(inside(run_dir)):
+        recover_ingest(inside(run_dir))
+        return _record_review(inside(run_dir), path)
 
 
 def _record_review(run_dir, path):
     response_bytes = Path(path).read_bytes()
     response = json.loads(response_bytes.decode('utf-8-sig'))
-    candidate = read(run_dir / 'candidate.json')
     original_bytes=(run_dir/'candidate.json').read_bytes()
+    candidate=json.loads(original_bytes.decode('utf-8-sig'))
     by_id = {q['id']: q for q in candidate['questions']}
     kind = response['kind']
     if kind not in ('fidelity', 'answer') or response.get('independent') is not True:
@@ -246,6 +315,12 @@ def check_review_bindings(candidate, root):
 
 
 def sync_assets(run_dir):
+    from checkpoints import state_lock
+    with state_lock(inside(run_dir)):
+        recover_ingest(inside(run_dir))
+        return _sync_assets(run_dir)
+
+def _sync_assets(run_dir):
     run_dir = inside(run_dir)
     candidate = read(run_dir / 'candidate.json')
     catalog = read(run_dir / 'catalog.json')

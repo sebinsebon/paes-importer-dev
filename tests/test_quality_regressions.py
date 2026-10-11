@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "shared" / "scripts"))
-from package_io import validate_structured_content
+from package_io import validate_structured_content, renderable_math
 
 
 def question(stem=None, options=None):
@@ -55,6 +55,25 @@ class ImportQualityGateTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(ValueError, "VISUAL_OPTION_PLACEHOLDER"):
             validate_structured_content(question(options=opts))
+
+    def test_currency_multiple_amounts_allowed(self):
+        validate_structured_content(question(stem=[{'type':'text','text':'Cuesta $ 11 000 y cuesta $ 80 000.'}]))
+
+    def test_blank_text_rejected(self):
+        with self.assertRaisesRegex(ValueError,'EMPTY_CONTENT'):
+            validate_structured_content(question(stem=[{'type':'text','text':'   '}]))
+
+    def test_display_tag_validated_with_mode(self):
+        renderable_math(((r'\tag{1}x=2', True),))
+        with self.assertRaisesRegex(ValueError,'KaTeX'):
+            renderable_math(((r'\tag{1}x=2', False),))
+
+    def test_aligned_row_separator_before_variable_allowed(self):
+        validate_structured_content(question(stem=[{'type':'math','latex':r'\begin{aligned}x=2\\sin(x)=0\end{aligned}','display':True}]))
+
+    def test_double_vec_outside_environment_rejected(self):
+        with self.assertRaisesRegex(ValueError,'DOUBLE_ESCAPED'):
+            validate_structured_content(question(stem=[{'type':'math','latex':r'\\vec{x}','display':False}]))
 
     def test_visual_option_image_allowed(self):
         opts = [
