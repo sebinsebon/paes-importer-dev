@@ -75,6 +75,21 @@ def validate_structured_content(q):
             latex = block['latex'].strip()
             if latex.startswith(('$', r'\(', r'\[')) or latex.endswith(('$', r'\)', r'\]')):
                 errors.append(f'{q["id"]}/{at}: MATH_DELIMITERS; math.latex must omit delimiters')
+    # Quality gates for deterministic corruption observed in real M1 imports.
+    # Source fidelity still requires manual/AI visual comparison.
+    for at, block in located_blocks(q):
+        if block['type'] == 'math' and re.search(r'(?<!\\)\\\\(?=[A-Za-z])', block['latex']):
+            errors.append(f'{q["id"]}/{at}: DOUBLE_ESCAPED_LATEX_COMMAND; use one backslash before a KaTeX command')
+    for option in q['options']:
+        blocks = option['blocks']
+        if len(blocks) == 1 and blocks[0]['type'] == 'text':
+            content = blocks[0]['text'].strip()
+            if re.fullmatch(r'(?:gr[aá]fico|imagen|figura|diagrama)\\s+de\\s+(?:la\\s+)?alternativa\\s+' + re.escape(option['label']), content, re.IGNORECASE):
+                errors.append(f'{q["id"]}/option-{option["label"]}: VISUAL_OPTION_PLACEHOLDER; attach the actual option image')
+    if len(q['options']) >= 2 and all(
+            len(o['blocks']) == 1 and o['blocks'][0]['type'] == 'text' and
+            re.fullmatch(r'\\s*0{3}\\s*', o['blocks'][0]['text']) for o in q['options']):
+        errors.append(f'{q["id"]}: TRUNCATED_NUMERIC_OPTIONS; check missing monetary prefixes/digits against the PDF')
     if errors:
         raise ValueError('; '.join(errors))
 
