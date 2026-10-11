@@ -116,7 +116,7 @@
     },
     {
       "path": "shared/scripts/package_io.py",
-      "sha256": "e9b40c7064a714778ac6c45d137b8d5816a4832b9dd4d3ad2aa23b0b311caae0"
+      "sha256": "facfb64e8255fadc1257e895556d90a3f20e10178e8edb1bdd835de1aba25f76"
     },
     {
       "path": "shared/scripts/pdf_assets.py",
