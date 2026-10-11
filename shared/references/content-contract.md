@@ -13,9 +13,10 @@ Regiones: página física desde 1, bbox [x0,y0,x1,y1] en puntos PDF, origen supe
 ## Fidelidad estructural obligatoria
 
 - Tablas mediante table.rows: filas ordenadas, celdas de bloques, encabezados, columnas, unidades y posición. No usar tablas Markdown ni aplanarlas a prosa.
-- Matemática mediante math.latex sin delimitadores $, $$, \(...\), \[...\]. display=false en línea y true para una expresión separada. text es prosa literal, sin comandos LaTeX.
+- Matemática mediante math.latex sin delimitadores $, $$, \(...\), \[...\]. display=false en línea y true para una expresión separada. text es prosa literal, sin comandos LaTeX. En JSON decodificado, cada comando KaTeX comienza con una barra invertida; dos barras antes de `sqrt` o `frac` indican doble escape erróneo. No aplanar exponentes, radicales o fracciones: una imagen no sustituye al bloque matemático.
 - Fórmulas renderizables en KaTeX local, trust=false y sin macros privadas.
 - Si el contrato no expresa una estructura esencial (p. ej. celdas combinadas), conservar imagen fiel y registrar limitación en issues. Sin evidencia legible, usar unresolved; no inventar.
+- En alternativas gráficas, cada opción debe referenciar su propia imagen o estructura equivalente; un mosaico en stem acompañado por opciones genéricas no basta. Preservar símbolo y cifras de moneda; si una transformación pierde parte de `$11 000`, cotejar de nuevo el PDF, nunca inferir.
 - Aprobar estructura no demuestra fidelidad visual ni corrección matemática. Revisar gráficos y etiquetas contra las páginas, no solo alt text.
 
 ## Estados
