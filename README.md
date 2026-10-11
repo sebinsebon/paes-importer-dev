@@ -20,7 +20,7 @@ Si el usuario no indicó Chat Web o CLI, la primera acción es preguntarlo y esp
 
 El anfitrión debe obtener el bundle completo y leer SKILL.md con sus referencias. Si no puede acceder a GitHub, adjunta el ZIP de la skill. Un enlace o SKILL.md aislado no instala dependencias ni añade herramientas. Para un repo privado usa acceso disponible o bundle, nunca credenciales en el prompt.
 
-La skill pregunta destino: Documentos (por defecto), Descargas o ruta personalizada. En chat web sin acceso al equipo, entrega ZIP descargable y recomienda dónde guardarlo. Selección interactiva cuando exista; opciones numeradas en otras interfaces.
+**Chat Web:** no pregunta dónde guardar archivos; genera el ZIP en la carpeta temporal disponible y lo adjunta directamente a la conversación para descargar. **CLI:** pregunta solo si falta un destino explícito: Documentos (por defecto), Descargas o ruta personalizada. Nunca afirmes que un chat ha escrito archivos en el equipo del usuario.
 
 ## Modos
 
