@@ -12,11 +12,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "b66a55f44929b66f9b17a57a1fa9e09f69638faff63e3eeb0f41987ce42f40f0"
+      "sha256": "6e6590fe9d5ef8fc8d828b214d1db3e9546bdc7c2f245a4cec58e24b004249ba"
     },
     {
       "path": "SKILL.md",
-      "sha256": "62535950afd7462a97452f41c76f9378b621ec55478508bddfa91d939f14e64d"
+      "sha256": "407090d0dc85db16d85e183748e931d4607552cd785e87a81e0a204853aba56c"
     },
     {
       "path": "flows/01-chat-con-solucionario/WORKFLOW.md",

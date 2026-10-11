@@ -8,6 +8,10 @@ metadata:
 
 # Importador PAESSED M1
 
+## Primero: confirmar el entorno
+
+Antes de abrir referencias, flujos o PDFs, comprueba si el usuario ya indicó **Chat Web** o **CLI / agente de terminal** en esta conversación. Si lo indicó, usa esa respuesta sin volver a preguntar. Si no lo indicó o es ambiguo, pregunta: **«¿Dónde estás usando la skill: Chat Web o CLI / agente de terminal?»** Ofrece esas dos opciones y espera su respuesta antes de continuar. Mientras esperas, lee únicamente este SKILL.md; no cargues otros archivos ni ejecutes preparación o pruebas de capacidades. No deduzcas el entorno solo porque existan Python o herramientas de terminal.
+
 PAESSED necesita una transcripción fiel de cada pregunta, con matemática, tablas, imágenes, alternativas, respuesta y explicación. Esta skill produce un ZIP y un .paessed idéntico conforme al [contrato del paquete](shared/references/package-contract.md). El agente interpreta el PDF; los scripts incluidos preparan, validan y empaquetan. Esta versión cubre Matemática M1 y el lector local, sin acreditar integración con PAESSED Web.
 
 ## Elegir un solo flujo

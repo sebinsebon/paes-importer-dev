@@ -6,6 +6,8 @@ Repositorio: https://github.com/sebinsebon/paes-importer-skill
 
 **Para el agente:** comienza por [SKILL.md](SKILL.md), comprueba capacidades y cobertura del solucionario y lee únicamente el flujo seleccionado. Cada flujo enlaza los recursos comunes que necesita. Los informes y tests de mantenimiento no son parte del bundle.
 
+Si el usuario no indicó Chat Web o CLI, la primera acción es preguntarlo y esperar su respuesta antes de abrir PDFs, referencias o flujos. Si ya lo indicó en la conversación, continúa sin repetir la pregunta.
+
 ## Prompts listos para usar
 
 **Chat web**

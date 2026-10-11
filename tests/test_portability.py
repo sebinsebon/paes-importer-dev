@@ -107,6 +107,17 @@ class PortabilityTests(unittest.TestCase):
             self.assertTrue(any('references/workflow.md' in link for link in links), flow)
             self.assertTrue(any('content-contract.md' in link for link in links), flow)
 
+    def test_environment_confirmation_precedes_resource_loading(self):
+        entrypoint = (ROOT / 'SKILL.md').read_text(encoding='utf-8')
+        body = entrypoint.split('---', 2)[2].strip()
+        first_section = body.split('## ', 1)[1].split('\n\n', 2)
+        self.assertEqual(first_section[0], 'Primero: confirmar el entorno')
+        gate = first_section[1]
+        self.assertIn('¿Dónde estás usando la skill: Chat Web o CLI / agente de terminal?', gate)
+        self.assertIn('espera su respuesta antes de continuar', gate)
+        self.assertIn('sin volver a preguntar', gate)
+        self.assertNotRegex(gate, r'\]\([^)]+\)')
+
     def test_entrypoint_matches_runtime_coverage_policy(self):
         entrypoint = (ROOT / 'SKILL.md').read_text(encoding='utf-8')
         rows = re.findall(r'^\| (Chat web|CLI) \| ([^|]+) \| \[[^]]+\]\((flows/[^)]+)\) \|$',
