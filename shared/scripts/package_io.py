@@ -84,11 +84,11 @@ def validate_structured_content(q):
         blocks = option['blocks']
         if len(blocks) == 1 and blocks[0]['type'] == 'text':
             content = blocks[0]['text'].strip()
-            if re.fullmatch(r'(?:gr[aá]fico|imagen|figura|diagrama)\\s+de\\s+(?:la\\s+)?alternativa\\s+' + re.escape(option['label']), content, re.IGNORECASE):
+            if re.fullmatch(r'(?:gr[aá]fico|imagen|figura|diagrama)\s+de\s+(?:la\s+)?alternativa\s+' + re.escape(option['label']), content, re.IGNORECASE):
                 errors.append(f'{q["id"]}/option-{option["label"]}: VISUAL_OPTION_PLACEHOLDER; attach the actual option image')
     if len(q['options']) >= 2 and all(
             len(o['blocks']) == 1 and o['blocks'][0]['type'] == 'text' and
-            re.fullmatch(r'\\s*0{3}\\s*', o['blocks'][0]['text']) for o in q['options']):
+            re.fullmatch(r'\s*0{3}\s*', o['blocks'][0]['text']) for o in q['options']):
         errors.append(f'{q["id"]}: TRUNCATED_NUMERIC_OPTIONS; check missing monetary prefixes/digits against the PDF')
     if errors:
         raise ValueError('; '.join(errors))
