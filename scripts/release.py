@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED = {'.git', '.venv', 'tmp', '__pycache__', 'EnsayosPaessedOutput', '.pytest_cache', 'Output', '.work'}
-DIRECTORIES = {'scripts', 'shared', 'viewer', 'references'}
+DIRECTORIES = {'scripts', 'shared', 'viewer', 'references', 'flows'}
 ROOT_FILES = {'SKILL.md', 'README.md', 'LICENSE', 'NOTICE.md', 'requirements.txt', 'run.ps1'}
 
 def records():

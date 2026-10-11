@@ -12,11 +12,27 @@
     },
     {
       "path": "README.md",
-      "sha256": "37ef1e4cc7d6b900072780c980740d46b3554828cd08acbe417670072f232cdb"
+      "sha256": "b66a55f44929b66f9b17a57a1fa9e09f69638faff63e3eeb0f41987ce42f40f0"
     },
     {
       "path": "SKILL.md",
-      "sha256": "7bf1ec6d8fc0094d8498a8ca01e12df5b40ca2f78c4cb80ebac5289473d52044"
+      "sha256": "62535950afd7462a97452f41c76f9378b621ec55478508bddfa91d939f14e64d"
+    },
+    {
+      "path": "flows/01-chat-con-solucionario/WORKFLOW.md",
+      "sha256": "00e9d93b6207a68bfeba83771c386381df7086ff4b21cbd3ca8b47d3cc46f728"
+    },
+    {
+      "path": "flows/02-cli-con-solucionario/WORKFLOW.md",
+      "sha256": "863da2a95db525166363d15e53a98accf6bd743d421566580d236e2c75c02a79"
+    },
+    {
+      "path": "flows/03-cli-sin-solucionario/WORKFLOW.md",
+      "sha256": "fbad69f1a4a85e813427a1ad3ef02199262b6dd769542240228bfe69ac5e027d"
+    },
+    {
+      "path": "flows/04-chat-sin-solucionario/WORKFLOW.md",
+      "sha256": "1bb716bf29214c6db199da0a5444b011f061d72444f34f591055b28f9d628409"
     },
     {
       "path": "references/audit.md",
@@ -24,7 +40,7 @@
     },
     {
       "path": "references/hosts.md",
-      "sha256": "842f81984a4e21d6bbac92083965f1537560a26c9302246d585860c3a1a91401"
+      "sha256": "b9320f7aa29a39b9a8df9d429467e0e3d105ee5be5190b9ac1f80cabf9888db7"
     },
     {
       "path": "references/interfaces.md",
@@ -32,7 +48,7 @@
     },
     {
       "path": "references/workflow.md",
-      "sha256": "a9d3e25795bd0378b36bfb1076c8cf28856e85f98744bde0ccfdfa31e6e35658"
+      "sha256": "a9b553faa359941827116c0cd3be36f8bc617fad297ec7d04ceab430950f7fb7"
     },
     {
       "path": "requirements.txt",
@@ -56,7 +72,7 @@
     },
     {
       "path": "scripts/release.py",
-      "sha256": "885d588e5dfd211124921dcfc0b6f57959d15904c6ccebfbe982c0adcb94d680"
+      "sha256": "4a4098c0a78c86b04fca2c7ab65683ebac3d877c55b7faa08cc2465a5fe7f7d1"
     },
     {
       "path": "scripts/setup.py",

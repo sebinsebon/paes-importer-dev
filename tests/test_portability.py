@@ -12,6 +12,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+FLOW_FILES = (
+    'flows/01-chat-con-solucionario/WORKFLOW.md',
+    'flows/02-cli-con-solucionario/WORKFLOW.md',
+    'flows/03-cli-sin-solucionario/WORKFLOW.md',
+    'flows/04-chat-sin-solucionario/WORKFLOW.md',
+)
 
 
 class PortabilityTests(unittest.TestCase):
@@ -51,8 +57,11 @@ class PortabilityTests(unittest.TestCase):
                          'AGENTS.md', 'requirements-dev.txt', '.gitignore', '.gitattributes'}
             self.assertTrue(all(not (skill / name).exists() for name in forbidden))
             self.assertTrue((skill / 'references/hosts.md').is_file())
+            self.assertEqual({item['path'] for item in manifest['files'] if item['path'].startswith('flows/')},
+                             set(FLOW_FILES))
             # Agent-facing links must resolve inside the extracted bundle.
             for markdown in [skill / 'README.md', skill / 'SKILL.md',
+                             *(skill / 'flows').rglob('*.md'),
                              *(skill / 'references').rglob('*.md'),
                              *(skill / 'shared/references').rglob('*.md')]:
                 content = markdown.read_text(encoding='utf-8')
@@ -81,6 +90,43 @@ class PortabilityTests(unittest.TestCase):
                          '--destination', 'custom', '--output-root', workspace / 'output',
                          '--capabilities', capabilities, '--run-id', 'bundle-smoke-test')
             self.assertTrue((Path(json.loads(result.stdout)['run']) / 'catalog.json').is_file())
+
+    def test_entrypoint_routes_to_one_self_contained_flow(self):
+        entrypoint = (ROOT / 'SKILL.md').read_text(encoding='utf-8')
+        selected = re.findall(r'\]\((flows/[^)]+/WORKFLOW\.md)\)', entrypoint)
+        self.assertEqual(selected, list(FLOW_FILES))
+        manifest = json.loads((ROOT / 'release.json').read_text(encoding='utf-8'))
+        self.assertEqual([item['path'] for item in manifest['files']
+                          if item['path'].endswith('SKILL.md')], ['SKILL.md'])
+        for flow in FLOW_FILES:
+            instructions = (ROOT / flow).read_text(encoding='utf-8')
+            links = re.findall(r'\]\(([^)]+)\)', instructions)
+            self.assertTrue(links, flow)
+            self.assertFalse(any('/flows/' in link or link.startswith('../WORKFLOW')
+                                 for link in links), flow)
+            self.assertTrue(any('references/workflow.md' in link for link in links), flow)
+            self.assertTrue(any('content-contract.md' in link for link in links), flow)
+
+    def test_entrypoint_matches_runtime_coverage_policy(self):
+        entrypoint = (ROOT / 'SKILL.md').read_text(encoding='utf-8')
+        rows = re.findall(r'^\| (Chat web|CLI) \| ([^|]+) \| \[[^]]+\]\((flows/[^)]+)\) \|$',
+                          entrypoint, re.MULTILINE)
+        self.assertEqual(len(rows), 4)
+        select_mode = runpy.run_path(str(ROOT / 'scripts/policy.py'))['select_mode']
+        for host, covered, expected in (
+            ('web', ('q1', 'q2'), FLOW_FILES[0]),
+            ('cli', ('q1', 'q2'), FLOW_FILES[1]),
+            ('cli', ('q1',), FLOW_FILES[2]),
+            ('cli', (), FLOW_FILES[2]),
+            ('web', ('q1',), FLOW_FILES[3]),
+            ('web', (), FLOW_FILES[3]),
+        ):
+            decision = select_mode(host, ('q1', 'q2'), covered)
+            complete = decision['status'] == 'ready' and decision['processing_mode'] == 'answer-key'
+            environment = 'Chat web' if host == 'web' else 'CLI'
+            matches = [path for name, coverage, path in rows if name == environment and
+                       (coverage.strip() == 'Todas las preguntas') == complete]
+            self.assertEqual(matches, [expected], (host, covered))
 
     def test_setup_rejects_missing_node_before_creating_environment(self):
         with patch.object(sys, 'argv', ['setup.py']), patch('shutil.which', return_value=None):

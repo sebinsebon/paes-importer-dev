@@ -4,7 +4,7 @@ Skill portable para **PAES Matemática M1** desde PDF, con solucionario opcional
 
 Repositorio: https://github.com/sebinsebon/paes-importer-skill
 
-**Para el agente:** comienza por [SKILL.md](SKILL.md) y sigue solo las referencias operativas que necesite ([workflow](references/workflow.md), [interfaces](references/interfaces.md), [audit](references/audit.md) y [compatibilidad](references/hosts.md)). Los informes y tests de mantenimiento del repositorio no son parte de la skill distribuible.
+**Para el agente:** comienza por [SKILL.md](SKILL.md), comprueba capacidades y cobertura del solucionario y lee únicamente el flujo seleccionado. Cada flujo enlaza los recursos comunes que necesita. Los informes y tests de mantenimiento no son parte del bundle.
 
 ## Prompts listos para usar
 
@@ -24,9 +24,10 @@ La skill pregunta destino: Documentos (por defecto), Descargas o ruta personaliz
 
 | Entorno | Solucionario | Flujo |
 | --- | --- | --- |
-| Chat web / CLI | Completo y correspondiente | Importación con cotejo durante producción, sin resolver otra vez ni auditoría independiente completa. |
-| Chat web | Ausente / parcial | Consentimiento experimental para resolver pendientes; si rechazas, conserva respuestas/explicaciones missing. |
-| CLI | Ausente / parcial | Resuelve lo no cubierto; auditoría con subagentes si existen, o autorrevisión explícita. |
+| Chat web | Completo y correspondiente | [01 Chat con solucionario](flows/01-chat-con-solucionario/WORKFLOW.md): importación directa y ZIP descargable. |
+| CLI | Completo y correspondiente | [02 CLI con solucionario](flows/02-cli-con-solucionario/WORKFLOW.md): importación con lectura visual según las capacidades. |
+| CLI | Ausente o parcial | [03 CLI sin solucionario completo](flows/03-cli-sin-solucionario/WORKFLOW.md): resolver solo pendientes y auditar cuando existan revisores independientes. |
+| Chat web | Ausente o parcial | [04 Chat sin solucionario completo](flows/04-chat-sin-solucionario/WORKFLOW.md): comprobar viabilidad y solicitar consentimiento experimental. |
 
 Pauta con letras: explicación breve generada por IA. Con justificación: reutilizar/resumir y registrar origen. Pauta parcial: resolver solo faltantes. Incompatible/ambigua: aclarar o continuar sin utilizarla. Validación estructural y autorrevisión no convierten respuestas en verified.
 
@@ -50,7 +51,7 @@ El agente puede leer [SKILL.md](SKILL.md) desde esta carpeta. Para descubrimient
 
 ## Operación y salida
 
-El agente sigue [workflow](references/workflow.md), localiza preguntas, asocia pauta y produce contenido; prepare no resuelve automáticamente. [Interfaces](references/interfaces.md) de lote, pauta y cotejo. [Auditoría](references/audit.md) cuando corresponda.
+El agente sigue el flujo seleccionado por SKILL.md. Los cuatro reutilizan la [operación común](references/workflow.md), las [interfaces](references/interfaces.md) y los contratos; prepare no resuelve automáticamente. El flujo 03 usa [auditoría](references/audit.md) cuando corresponde.
 
 ~~~text
 Documentos/EnsayosPaessedOutput/
