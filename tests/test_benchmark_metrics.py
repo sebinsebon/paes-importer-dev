@@ -58,6 +58,7 @@ class MetricsTests(unittest.TestCase):
         self.assertIsNone(result['runs'][0]['comparison'])
         self.assertFalse(result['automatic_promotion'])
     def test_completed_evaluates_existing_outputs(self):
+        (ROOT/'tmp').mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=ROOT/'tmp') as temporary:
             home=Path(temporary)
             from test_contract_compatibility import fixture
