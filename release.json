@@ -152,7 +152,7 @@
     },
     {
       "path": "shared/scripts/package_io.py",
-      "sha256": "843833d1d6f7d340b6ac7ed12daf39edcb154784b446811bb7228c9ee202e684"
+      "sha256": "435ca9b2a71928654e08fd202fc5c022b79fe17cba3e93815502bc6aed62af8f"
     },
     {
       "path": "shared/scripts/pdf_assets.py",
