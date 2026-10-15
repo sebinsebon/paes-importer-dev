@@ -1,6 +1,6 @@
 # Compatibilidad de anfitriones
 
-SKILL.md funciona como instrucciones cuando el anfitrión puede leer las referencias y ejecutar el bundle. Instalar una skill no garantiza lectura visual ni otras capacidades.
+SKILL.md enruta a uno de cuatro WORKFLOW.md cuando el anfitrión puede leer el bundle. Instalar una skill no garantiza lectura visual ni otras capacidades. La clasificación web/CLI identifica el lugar de trabajo; las capacidades se observan en la sesión. Un chat web puede disponer de Python, Node y generación de ZIP.
 
 | Anfitrión | Estado de este bundle |
 | --- | --- |

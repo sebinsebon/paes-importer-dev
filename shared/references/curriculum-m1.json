@@ -1,0 +1,251 @@
+{
+  "subject": "Matemática M1",
+  "source": {
+    "title": "Temario PAES Regular Admisión 2027 M1",
+    "url": "https://acceso.mineduc.cl/wp-content/uploads/2026/03/Temario-PAESRegular-2026-M1-v1.pdf"
+  },
+  "ejes": [
+    {
+      "eje": "Números",
+      "subejes": [
+        "Conjunto de los números enteros y racionales",
+        "Porcentaje",
+        "Potencias y raíces enésimas"
+      ]
+    },
+    {
+      "eje": "Álgebra y funciones",
+      "subejes": [
+        "Expresiones algebraicas",
+        "Proporcionalidad",
+        "Ecuaciones e inecuaciones de primer grado",
+        "Sistemas de ecuaciones lineales (2x2)",
+        "Función lineal y afín",
+        "Función cuadrática"
+      ]
+    },
+    {
+      "eje": "Geometría",
+      "subejes": [
+        "Figuras geométricas",
+        "Cuerpos geométricos",
+        "Transformaciones isométricas",
+        "Semejanza y proporcionalidad de figuras"
+      ]
+    },
+    {
+      "eje": "Probabilidad y estadística",
+      "subejes": [
+        "Representación de datos a través de tablas y gráficos",
+        "Medidas de posición",
+        "Reglas de las probabilidades"
+      ]
+    }
+  ],
+  "rules": {
+    "principal": "Seleccionar el conocimiento central requerido para resolver, distinguiendo herramientas incidentales.",
+    "membership": "Contrastar el conocimiento requerido con alcance oficial; subeje válido no implica pertenencia.",
+    "uncertainty": "Usar dudoso con motivo cuando la lectura o el alcance no sean concluyentes.",
+    "prohibited": [
+      "Inferir por número o posición",
+      "Copiar anotaciones de otro ensayo",
+      "Clasificar únicamente según pauta"
+    ]
+  },
+  "guidance": [
+    {
+      "subeje": "Conjunto de los números enteros y racionales",
+      "central_content": "Operaciones, comparación, orden y resolución de problemas con enteros o racionales.",
+      "synthetic_example": "Cálculo de una suma de fracciones",
+      "inclusions": [
+        "Orden y aritmética entera/racional"
+      ],
+      "scope_boundaries": [
+        "Operatoria compleja"
+      ],
+      "official_pdf_page": 6
+    },
+    {
+      "subeje": "Porcentaje",
+      "central_content": "Cálculo, interpretación y variaciones porcentuales.",
+      "synthetic_example": "Descuento porcentual",
+      "inclusions": [
+        "Cálculo porcentual contextualizado"
+      ],
+      "scope_boundaries": [
+        "Interés continuo mediante cálculo"
+      ],
+      "official_pdf_page": 6
+    },
+    {
+      "subeje": "Potencias y raíces enésimas",
+      "central_content": "Propiedades, operaciones y problemas con potencias o raíces.",
+      "synthetic_example": "Simplificar una expresión con raíces",
+      "inclusions": [
+        "Base/exponente racional; radicales reales"
+      ],
+      "scope_boundaries": [
+        "Radicales complejos"
+      ],
+      "official_pdf_page": 6
+    },
+    {
+      "subeje": "Expresiones algebraicas",
+      "central_content": "Operatoria, productos notables y factorización de expresiones.",
+      "synthetic_example": "Factorizar un polinomio",
+      "inclusions": [
+        "Productos notables; factorización; operatoria"
+      ],
+      "scope_boundaries": [
+        "Derivación algebraica"
+      ],
+      "official_pdf_page": 7
+    },
+    {
+      "subeje": "Proporcionalidad",
+      "central_content": "Relaciones de proporcionalidad directa o inversa.",
+      "synthetic_example": "Razón entre tiempo y cantidad",
+      "inclusions": [
+        "Proporción directa/inversa y representaciones"
+      ],
+      "scope_boundaries": [
+        "Funciones de proporcionalidad no directa/inversa: revisar otro subeje"
+      ],
+      "official_pdf_page": 7
+    },
+    {
+      "subeje": "Ecuaciones e inecuaciones de primer grado",
+      "central_content": "Resolución e interpretación de ecuaciones o inecuaciones lineales de una variable.",
+      "synthetic_example": "Determinar un intervalo solución",
+      "inclusions": [
+        "Ecuaciones/inecuaciones lineales contextualizadas"
+      ],
+      "scope_boundaries": [
+        "Ecuaciones no lineales: revisar otro subeje"
+      ],
+      "official_pdf_page": 7
+    },
+    {
+      "subeje": "Sistemas de ecuaciones lineales (2x2)",
+      "central_content": "Resolución e interpretación de sistemas lineales con dos incógnitas.",
+      "synthetic_example": "Determinar dos precios",
+      "inclusions": [
+        "Sistemas lineales de dos incógnitas"
+      ],
+      "scope_boundaries": [
+        "Sistemas no lineales o de más incógnitas"
+      ],
+      "official_pdf_page": 7
+    },
+    {
+      "subeje": "Función lineal y afín",
+      "central_content": "Representaciones, pendiente e interpretación de relaciones lineales o afines.",
+      "synthetic_example": "Interpretar la pendiente de una recta",
+      "inclusions": [
+        "Funciones lineales/afines y representaciones"
+      ],
+      "scope_boundaries": [
+        "Funciones trascendentes"
+      ],
+      "official_pdf_page": 7
+    },
+    {
+      "subeje": "Función cuadrática",
+      "central_content": "Representaciones y características de relaciones cuadráticas.",
+      "synthetic_example": "Interpretar vértice de una parábola",
+      "inclusions": [
+        "Ecuaciones cuadráticas; parábolas; vértice/ceros/intersecciones"
+      ],
+      "scope_boundaries": [
+        "Derivadas para extremos"
+      ],
+      "official_pdf_page": 7
+    },
+    {
+      "subeje": "Figuras geométricas",
+      "central_content": "Propiedades, perímetros y áreas de figuras planas.",
+      "synthetic_example": "Área de un triángulo",
+      "inclusions": [
+        "Pitágoras; perímetros/áreas triangulares, cuadrilaterales indicados y circulares"
+      ],
+      "scope_boundaries": [
+        "Trigonometría como requisito central"
+      ],
+      "official_pdf_page": 8
+    },
+    {
+      "subeje": "Cuerpos geométricos",
+      "central_content": "Propiedades, superficies y volúmenes de cuerpos.",
+      "synthetic_example": "Volumen de un cilindro",
+      "inclusions": [
+        "Superficie/volumen: paralelepípedos, cubos, cilindros"
+      ],
+      "scope_boundaries": [
+        "Volúmenes de conos/pirámides/esferas"
+      ],
+      "official_pdf_page": 8
+    },
+    {
+      "subeje": "Transformaciones isométricas",
+      "central_content": "Traslaciones, reflexiones y rotaciones.",
+      "synthetic_example": "Coordenadas tras una reflexión",
+      "inclusions": [
+        "Vectores/puntos cartesianos; rotaciones/traslaciones/reflexiones"
+      ],
+      "scope_boundaries": [
+        "Vectores tridimensionales"
+      ],
+      "official_pdf_page": 8
+    },
+    {
+      "subeje": "Semejanza y proporcionalidad de figuras",
+      "central_content": "Semejanza, homotecia y relaciones de proporcionalidad geométrica.",
+      "synthetic_example": "Razón de áreas de figuras semejantes",
+      "inclusions": [
+        "Semejanza/proporcionalidad aplicada a escalas"
+      ],
+      "scope_boundaries": [
+        "Trigonometría para semejanza"
+      ],
+      "official_pdf_page": 8
+    },
+    {
+      "subeje": "Representación de datos a través de tablas y gráficos",
+      "central_content": "Lectura, organización e interpretación de datos representados.",
+      "synthetic_example": "Comparar frecuencias de una tabla",
+      "inclusions": [
+        "Frecuencias absoluta/relativa; gráficos; media"
+      ],
+      "scope_boundaries": [
+        "Inferencia estadística"
+      ],
+      "official_pdf_page": 9
+    },
+    {
+      "subeje": "Medidas de posición",
+      "central_content": "Interpretación y cálculo de medidas de posición del alcance oficial.",
+      "synthetic_example": "Determinar un cuartil",
+      "inclusions": [
+        "Cuartiles/percentiles; representación mediante cajas"
+      ],
+      "scope_boundaries": [
+        "Varianza/desviación estándar"
+      ],
+      "official_pdf_page": 9
+    },
+    {
+      "subeje": "Reglas de las probabilidades",
+      "central_content": "Probabilidades y reglas de combinación del alcance oficial.",
+      "synthetic_example": "Probabilidad de unión de eventos",
+      "inclusions": [
+        "Eventos; combinación aditiva/multiplicativa"
+      ],
+      "scope_boundaries": [
+        "Distribuciones continuas/inferencia"
+      ],
+      "official_pdf_page": 9
+    }
+  ],
+  "scope_note": "Usar inclusions y la página oficial para decidir pertenencia. scope_boundaries señala límites inferidos y posibles remisiones a otro subeje; no aplica exclusiones automáticas. La clasificación general usa requisitos de la pregunta, nunca su posición o una taxonomía particular.",
+  "boundary_interpretation": "Las inclusiones resumen el listado oficial; los límites son inferencias operativas, no exclusiones textuales del DEMRE. Un contenido ausente no se marca no si puede resolverse con conocimientos incluidos. Si requiere decidir entre subejes o interpretación de alcance, conservar dudoso con razón y cotejar la fuente."
+}

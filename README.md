@@ -4,7 +4,9 @@ Skill portable para **PAES Matemática M1** desde PDF, con solucionario opcional
 
 Repositorio: https://github.com/sebinsebon/paes-importer-skill
 
-**Para el agente:** comienza por [SKILL.md](SKILL.md) y sigue solo las referencias operativas que necesite ([workflow](references/workflow.md), [interfaces](references/interfaces.md), [audit](references/audit.md) y [compatibilidad](references/hosts.md)). Los informes y tests de mantenimiento del repositorio no son parte de la skill distribuible.
+**Para el agente:** comienza por [SKILL.md](SKILL.md), comprueba capacidades y cobertura del solucionario y lee únicamente el flujo seleccionado. Cada flujo enlaza los recursos comunes que necesita. Los informes y tests de mantenimiento no son parte del bundle.
+
+Si el usuario no indicó Chat Web o CLI, la primera acción es preguntarlo y esperar su respuesta antes de abrir PDFs, referencias o flujos. Si ya lo indicó en la conversación, continúa sin repetir la pregunta.
 
 ## Prompts listos para usar
 
@@ -18,15 +20,16 @@ Repositorio: https://github.com/sebinsebon/paes-importer-skill
 
 El anfitrión debe obtener el bundle completo y leer SKILL.md con sus referencias. Si no puede acceder a GitHub, adjunta el ZIP de la skill. Un enlace o SKILL.md aislado no instala dependencias ni añade herramientas. Para un repo privado usa acceso disponible o bundle, nunca credenciales en el prompt.
 
-La skill pregunta destino: Documentos (por defecto), Descargas o ruta personalizada. En chat web sin acceso al equipo, entrega ZIP descargable y recomienda dónde guardarlo. Selección interactiva cuando exista; opciones numeradas en otras interfaces.
+**Chat Web:** no pregunta dónde guardar archivos; genera el ZIP en la carpeta temporal disponible y lo adjunta directamente a la conversación para descargar. **CLI:** pregunta solo si falta un destino explícito: Documentos (por defecto), Descargas o ruta personalizada. Nunca afirmes que un chat ha escrito archivos en el equipo del usuario.
 
 ## Modos
 
 | Entorno | Solucionario | Flujo |
 | --- | --- | --- |
-| Chat web / CLI | Completo y correspondiente | Importación con cotejo durante producción, sin resolver otra vez ni auditoría independiente completa. |
-| Chat web | Ausente / parcial | Consentimiento experimental para resolver pendientes; si rechazas, conserva respuestas/explicaciones missing. |
-| CLI | Ausente / parcial | Resuelve lo no cubierto; auditoría con subagentes si existen, o autorrevisión explícita. |
+| Chat web | Completo y correspondiente | [01 Chat con solucionario](flows/01-chat-con-solucionario/WORKFLOW.md): importación directa y ZIP descargable. |
+| CLI | Completo y correspondiente | [02 CLI con solucionario](flows/02-cli-con-solucionario/WORKFLOW.md): importación con lectura visual según las capacidades. |
+| CLI | Ausente o parcial | [03 CLI sin solucionario completo](flows/03-cli-sin-solucionario/WORKFLOW.md): resolver solo pendientes y auditar cuando existan revisores independientes. |
+| Chat web | Ausente o parcial | [04 Chat sin solucionario completo](flows/04-chat-sin-solucionario/WORKFLOW.md): comprobar viabilidad y solicitar consentimiento experimental. |
 
 Pauta con letras: explicación breve generada por IA. Con justificación: reutilizar/resumir y registrar origen. Pauta parcial: resolver solo faltantes. Incompatible/ambigua: aclarar o continuar sin utilizarla. Validación estructural y autorrevisión no convierten respuestas en verified.
 
@@ -50,7 +53,7 @@ El agente puede leer [SKILL.md](SKILL.md) desde esta carpeta. Para descubrimient
 
 ## Operación y salida
 
-El agente sigue [workflow](references/workflow.md), localiza preguntas, asocia pauta y produce contenido; prepare no resuelve automáticamente. [Interfaces](references/interfaces.md) de lote, pauta y cotejo. [Auditoría](references/audit.md) cuando corresponda.
+El agente sigue el flujo seleccionado por SKILL.md. Los cuatro reutilizan la [operación común](references/workflow.md), las [interfaces](references/interfaces.md) y los contratos; prepare no resuelve automáticamente. El flujo 03 usa [auditoría](references/audit.md) cuando corresponde.
 
 ~~~text
 Documentos/EnsayosPaessedOutput/
@@ -85,3 +88,8 @@ Solo M1. Formato histórico paessed-benchmark/0.1.0 compatible con el lector loc
 Pruebas sintéticas no acreditan funcionamiento real de todos los chats/modelos/CLI. [Compatibilidad por entorno](references/hosts.md).
 
 Código MIT. JSZip/KaTeX preservan licencias y atribuciones: [NOTICE](NOTICE.md). No agregar PDFs privados, resultados derivados, recortes de ensayos ni credenciales.
+
+
+## Contrato curricular 0.2.0
+
+Toda nueva importación M1 incorpora questions[].curriculum = {eje, subeje, en_temario}. Clasificar automáticamente cada pregunta por su contenido usando los cuatro ejes y 16 subejes de shared/references/curriculum-m1.json; consultar shared/references/curriculum-contract.md para pertenencia, evidencia y pendientes. No copiar la taxonomía de TESLA ni inferir desde numeración. Cada lote añade curriculum_provenance[id] con reason y evidence [{source_id,page,observation}]. Clasificar también preguntas sin pauta o cuya resolución experimental se rechazó. Conservar la incertidumbre como dudoso; un par null requiere CURRICULUM_PENDING y entrega curricular parcial. Los lectores admiten finales históricos 0.1.0 sin inventar clasificación; el manifiesto del paquete sigue en 0.1.0.

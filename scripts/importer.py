@@ -10,6 +10,7 @@ import sys
 import time
 import unicodedata
 import uuid
+from functools import wraps
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,12 +20,23 @@ from lab import (artifact_path, configure_workspace, digest, event, inside, json
 from package_io import inspect_package, pack, validate
 from pdf_assets import apply_crops, prepare_catalog, source_record
 from direct_gate import validate_direct_input
+from evidence import field_paths, validate_citations, validate_geometry, validate_mapping
+from quality import summarize, require_publishable
 import pipeline as engine
 from policy import select_mode
 
 CHECKS = ('stem', 'options', 'assets_math', 'answer', 'explanation', 'consistency')
 CAPABILITIES = ('pdf_visual', 'crop', 'execute', 'zip', 'validate')
 PROTOCOL = '0.3.0'
+
+
+def candidate_operation(function):
+    @wraps(function)
+    def locked(folder, *args, **kwargs):
+        from checkpoints import state_lock
+        with state_lock(inside(folder)):
+            return function(folder, *args, **kwargs)
+    return locked
 
 
 def slug(value):
@@ -105,7 +117,7 @@ def prepare(args):
     temporary.mkdir()
     os.environ.update(TEMP=str(temporary), TMP=str(temporary), UV_CACHE_DIR=str(temporary / 'uv-cache'))
     config = {'host': args.host, 'model': args.model, 'effort': args.effort, 'batch_size': 5,
-              'capabilities': capabilities, 'max_retries': 1,
+              'capabilities': capabilities, 'max_retries': 3,
               'suggested_save_location': getattr(args, 'suggested_save_location', None)}
     run = {'id': rid, 'pipeline': 'pdf-direct', 'variant': 'direct', 'protocol_version': PROTOCOL,
            'purpose': 'portable-import', 'eligible': False, 'status': 'preparing',
@@ -146,6 +158,7 @@ def verify_pre_mapping(folder):
             raise ValueError('Source changed before question mapping')
 
 
+@candidate_operation
 def map_questions(folder, selection_file):
     verify_pre_mapping(folder)
     run = read(folder / 'run.json')
@@ -162,6 +175,25 @@ def map_questions(folder, selection_file):
                 or not isinstance(q.get('number'), str) or not q['number']
                 or type(q.get('page')) is not int or not 1 <= q['page'] <= pages or q['number'] in numbers):
             raise ValueError('Invalid question identity, number, exam source or physical page')
+        labels = q.get('option_labels')
+        if labels is None and q.get('mapping_pending') is not True:
+            raise ValueError('Observe option_labels or declare mapping_pending explicitly')
+        if labels is not None and (not isinstance(labels, list) or len(labels) < 2 or
+                len(set(labels)) != len(labels) or any(not isinstance(x, str) or not re.fullmatch('[A-Z]', x) for x in labels)):
+            raise ValueError('Observed option_labels must be distinct A..Z labels')
+        for region in q.get('regions', []):
+            page = next((p for p in read(folder/'catalog.json')['pages'] if p['source_id'] == 'exam' and p['page'] == region.get('page')), None)
+            if not page:
+                raise ValueError('Mapped region page missing from catalog')
+            __import__('lab').bbox(region['bbox'], page['width'], page['height'])
+        for dimension, regions in q.get('field_regions', {}).items():
+            if dimension not in CHECKS or not isinstance(regions, list) or not regions:
+                raise ValueError('Invalid mapped field_regions')
+            for region in regions:
+                page = next((p for p in read(folder/'catalog.json')['pages'] if p['source_id'] == 'exam' and p['page'] == region.get('page')), None)
+                if not page:
+                    raise ValueError('Mapped field region outside catalog')
+                __import__('lab').bbox(region['bbox'], page['width'], page['height'])
         numbers.add(q['number'])
     if selection.get('observed_question_count') != len(expected) or not selection.get('observation'):
         raise ValueError('Record observed total question count and mapping observation')
@@ -204,7 +236,8 @@ def validate_key(record, candidate):
     return {e['question_id']: e for e in entries}
 
 
-def route(folder, key_file, subagents, experimental):
+@candidate_operation
+def route(folder, key_file, subagents, experimental, review_ids=None):
     engine.verify_resume(folder)
     run, candidate = read(folder / 'run.json'), read(folder / 'candidate.json')
     if run['status'] != 'awaiting_route':
@@ -243,51 +276,101 @@ def frozen_route(folder):
     return decision
 
 
+@candidate_operation
 def ingest(folder, response_file):
     ensure_editable(folder)
     decision = frozen_route(folder)
-    response = read(response_file)
-    candidate = read(folder / 'candidate.json')
+    raw_response_bytes = Path(response_file).read_bytes()
+    response = json.loads(raw_response_bytes.decode('utf-8-sig'))
+    candidate = read(folder/'candidate.json')
     key = validate_key(decision['answer_key'], candidate) if decision['answer_key'] else {}
     explanations = response.get('explanation_provenance', {})
     allowed = {q['id'] for q in candidate['questions']}
-    if not set(explanations) <= allowed:
+    questions = response.get('questions', [])
+    if (not isinstance(questions, list) or not questions or any(not isinstance(q, dict) or q.get('id') not in allowed for q in questions) or
+            len({q['id'] for q in questions}) != len(questions)):
+        raise ValueError('AI batch must have unique questions inside frozen selection')
+    if not isinstance(explanations, dict) or not set(explanations).issubset(allowed):
         raise ValueError('Unknown explanation question')
-    for q in response.get('questions', []):
-        if q['id'] in key:
-            label = key[q['id']]['label']
-            if label not in {o['label'] for o in q['options']}:
-                raise ValueError('Key answer does not exist among question alternatives')
-            q['answer'] = {'label': label, 'status': 'provisional', 'origin': 'answer-key',
-                           'source_ref': '.work/base/answer-key-map.json#' + q['id']}
-        elif q['id'] in decision['pending_question_ids']:
-            if q['answer']['label'] is not None or q['explanation']['blocks']:
-                raise ValueError('Experimental solving declined: keep uncovered answers/explanations missing')
-        elif q['answer']['origin'] == 'answer-key':
-            raise ValueError('Answer-key origin requires a frozen matching entry')
-        if q['explanation']['blocks']:
-            provenance = explanations.get(q['id'])
-            if not provenance or provenance.get('origin') not in ('model', 'solution'):
-                raise ValueError('Every explanation needs model/solution provenance')
-            if provenance['origin'] == 'solution':
-                if q['id'] not in key or not key[q['id']].get('has_explanation'):
-                    raise ValueError('No source justification recorded for this question')
-                if provenance.get('source_id') != key[q['id']]['source_id'] or provenance.get('page') != key[q['id']]['page']:
-                    raise ValueError('Solution explanation source/page mismatch')
-    # Archive exact host output before applying deterministic answer-key binding.
-    stamp = str(time.time_ns())
-    raw = inside(folder / 'raw' / (stamp + '.json')); raw.parent.mkdir(parents=True, exist_ok=True)
-    raw.write_bytes(Path(response_file).read_bytes())
-    staged = folder / 'requests' / (stamp + '.json')
-    write(staged, response)
-    result = engine.ingest(folder, staged)
-    saved = read(folder / 'explanation-provenance.json') if (folder / 'explanation-provenance.json').exists() else {}
-    for q in response.get('questions', []):
-        saved[q['id']] = explanations.get(q['id'], {'origin': 'none'})
-    write(folder / 'explanation-provenance.json', saved)
+    prepared = []
+    rejected = []
+    for raw_question in questions:
+        q = copy.deepcopy(raw_question)
+        try:
+            if q['id'] in key:
+                label = key[q['id']]['label']
+                if label not in {o['label'] for o in q['options']}:
+                    raise ValueError('Key answer does not exist among question alternatives')
+                q['answer'] = {'label':label, 'status':'provisional', 'origin':'answer-key',
+                               'source_ref':'.work/base/answer-key-map.json#'+q['id']}
+            elif q['id'] in decision['pending_question_ids']:
+                if q['answer']['label'] is not None or q['explanation']['blocks']:
+                    raise ValueError('Experimental solving declined: keep uncovered answers/explanations missing')
+            elif q['answer']['origin'] == 'answer-key':
+                raise ValueError('Answer-key origin requires a frozen matching entry')
+            if q['explanation']['blocks']:
+                provenance = explanations.get(q['id'])
+                if not provenance or provenance.get('origin') not in ('model','solution'):
+                    raise ValueError('Every explanation needs model/solution provenance')
+                if provenance['origin'] == 'solution':
+                    if q['id'] not in key or not key[q['id']].get('has_explanation'):
+                        raise ValueError('No source justification recorded for this question')
+                    if provenance.get('source_id') != key[q['id']]['source_id'] or provenance.get('page') != key[q['id']]['page']:
+                        raise ValueError('Solution explanation source/page mismatch')
+            prepared.append(q)
+        except (ValueError,KeyError,TypeError) as exc:
+            rejected.append({'question_id':q['id'],'reason':str(exc)})
+    if not prepared:
+        raise ValueError('No questions accepted: '+'; '.join(r['reason'] for r in rejected))
+    response = {**response, 'questions':prepared, 'curriculum_provenance':{qid:r for qid,r in response.get('curriculum_provenance',{}).items() if qid in {q['id'] for q in prepared}}}
+    staged = folder/'requests'/('ingest-'+str(time.time_ns())+'.json')
+    write(staged,response)
+    try:
+        result = engine.ingest(folder, staged, raw_response_bytes=raw_response_bytes, explanation_provenance=explanations)
+    finally:
+        staged.unlink(missing_ok=True)
+    result['rejected'] = rejected + result['rejected']
     return result
 
 
+def record_usage(folder, response_file):
+    """Record provider receipts without estimating missing measurements."""
+    frozen_route(folder)
+    response = read(response_file)
+    if response.get('run_id') != read(folder/'run.json')['id']:
+        raise ValueError('Usage belongs to a different run')
+    incoming = response.get('events')
+    if not isinstance(incoming,list) or not incoming:
+        raise ValueError('Usage needs nonempty individual provider events')
+    stored = read(folder/'usage-events.json') if (folder/'usage-events.json').exists() else []
+    by_id = {e['event_id']:e for e in stored}
+    from metrics import aggregate_usage
+    for receipt in incoming:
+        if not isinstance(receipt,dict) or not isinstance(receipt.get('usage_source'),str) or receipt['usage_source'] in ('','unavailable'):
+            raise ValueError('Usage requires actual provider receipt source')
+        aggregate_usage([receipt])
+        prior = by_id.get(receipt['event_id'])
+        if prior is not None and prior != receipt:
+            raise ValueError('Conflicting usage receipt for existing event_id')
+        by_id[receipt['event_id']] = receipt
+    values = list(by_id.values())
+    total = aggregate_usage(values)
+    write(folder/'usage-events.json',values)
+    write(folder/'usage-summary.json',total)
+    return {'usage':total,'attestation':'provider receipts reported by host; not authenticated by this script'}
+
+
+def final_usage(folder):
+    from metrics import aggregate_usage
+    records = read(folder/'usage-events.json') if (folder/'usage-events.json').exists() else []
+    total = aggregate_usage(records)
+    before, after = total['input_tokens'],total['output_tokens']
+    return {**total,'total_tokens':before+after if before is not None and after is not None else None,
+            'cost_usd':total['cost'] if total['currency']=='USD' else None,
+            'source':'provider_receipts' if records else 'unavailable'}
+
+
+@candidate_operation
 def record_input(folder, response_file):
     ensure_editable(folder)
     frozen_route(folder)
@@ -315,9 +398,10 @@ def check_template(folder):
     candidate = read(folder / 'candidate.json')
     return {'run_id': candidate['run']['id'], 'independent': False,
             'session_id': read(folder / 'run.json')['session_id'],
+            'protocol': 'source-cotejo-0.2',
             'questions': [{'id': q['id'], 'content_sha256': engine.content_hash(q, candidate, folder),
                            'solution_sha256': engine.solution_hash(q, candidate, folder),
-                           'checks': {k: {'status': 'unresolved', 'reason': '', 'evidence': []} for k in CHECKS}}
+                           'checks': {k: {'status': 'unresolved', 'reason': '', 'field_paths': field_paths(q)[k], 'evidence': []} for k in CHECKS}}
                           for q in candidate['questions']]}
 
 
@@ -331,6 +415,12 @@ def check_record(folder, record, candidate):
     if not rows or len({r['id'] for r in rows}) != len(rows):
         raise ValueError('Self-check rows must be nonempty and unique')
     resources = {a['id']: a for a in candidate['assets'] + candidate['evidence']}
+    selection = {q['id']: q for q in read(folder/'selection.json')['expected_questions']}
+    key_path = folder/'answer-key-map.json'
+    keys = {e['question_id']: e for e in read(key_path)['entries']} if key_path.exists() else {}
+    provenance = read(folder/'explanation-provenance.json') if (folder/'explanation-provenance.json').exists() else {}
+    if candidate['schema_version'] == '0.2.0' and record.get('protocol') != 'source-cotejo-0.2':
+        raise ValueError('Source cotejo 0.2 protocol required')
     for row in rows:
         q = by_id.get(row['id'])
         if (not q or row.get('content_sha256') != engine.content_hash(q, candidate, folder)
@@ -338,8 +428,8 @@ def check_record(folder, record, candidate):
             raise ValueError('Stale self-check question/solution')
         if set(row.get('checks', {})) != set(CHECKS):
             raise ValueError('Self-check needs all six dimensions')
-        for check in row['checks'].values():
-            if check.get('status') not in ('pass', 'unresolved') or not check.get('reason') or not check.get('evidence'):
+        for dimension, check in row['checks'].items():
+            if check.get('status') not in ('pass', 'fail', 'unresolved') or not check.get('reason') or not check.get('evidence'):
                 raise ValueError('Self-check needs pass/unresolved, reason and visual evidence')
             for citation in check['evidence']:
                 resource = resources.get(citation.get('id'))
@@ -347,9 +437,12 @@ def check_record(folder, record, candidate):
                         or not citation.get('observation')
                         or digest(artifact_path(folder, resource['path'])) != citation['sha256']):
                     raise ValueError('Unknown, altered or unjustified self-check evidence')
+            if candidate['schema_version'] == '0.2.0':
+                validate_citations(q, dimension, check, candidate, folder, selection.get(q['id']), keys.get(q['id']), provenance.get(q['id']))
     return rows
 
 
+@candidate_operation
 def record_check(folder, response_file):
     ensure_editable(folder)
     frozen_route(folder)
@@ -377,11 +470,26 @@ def validate_for_pack(folder):
     if candidate['run'].get('answer_key_sha256') != expected_key_hash:
         raise ValueError('Candidate changed answer-key identity')
     validate_direct_input(candidate, folder)
-    validate(candidate, folder)
+    validation_result = validate(candidate, folder)
+    validate_geometry(candidate, read(folder/'catalog.json'))
+    if candidate['schema_version'] == '0.2.0': validate_mapping(candidate,read(folder/'selection.json'))
     key = validate_key(decision['answer_key'], candidate) if decision['answer_key'] else {}
     provenance = read(folder / 'explanation-provenance.json') if (folder / 'explanation-provenance.json').exists() else {}
     checks = read(folder / 'self-checks.json') if (folder / 'self-checks.json').exists() else {}
+    curriculum_ledger = read(folder/'curriculum-ledger.json') if (folder/'curriculum-ledger.json').exists() else {}
+    mapped = {q['id']:q for q in read(folder/'selection.json')['expected_questions']}
     for q in candidate['questions']:
+        if candidate['schema_version'] == '0.2.0':
+            from curriculum import curriculum_hash, prepare_ledger, validate_question_curriculum
+            classified = validate_question_curriculum(q)
+            entry = curriculum_ledger.get(q['id'], {})
+            if classified:
+                if entry.get('curriculum_sha256') != curriculum_hash(q, engine.content_hash(q,candidate,folder)):
+                    raise ValueError(q['id']+': Stale or absent curriculum evidence ledger')
+                prepare_ledger(candidate, {'questions':[q], 'curriculum_provenance':{q['id']:entry}}, engine.content_hash, folder, curriculum_ledger)
+            observed_labels = mapped[q['id']].get('option_labels')
+            if observed_labels is not None and [o['label'] for o in q['options']] != observed_labels:
+                raise ValueError(q['id']+': options differ from frozen observed labels')
         if q['id'] in key:
             if (q['answer']['label'] != key[q['id']]['label'] or q['answer']['origin'] != 'answer-key'
                     or q['answer']['source_ref'] != '.work/base/answer-key-map.json#' + q['id']):
@@ -401,13 +509,23 @@ def validate_for_pack(folder):
         bound = check_record(folder, archived, candidate)
         if entry['row'] not in bound:
             raise ValueError('Self-check archive binding mismatch')
+    result = summarize(candidate, checks)
+    for q in candidate['questions']:
+        if mapped[q['id']].get('mapping_pending'):
+            result['issues'].append({'question_id':q['id'],'field':'options','code':'MAPPING_PENDING','severity':'warning'})
+            if result['publication_eligibility'] != 'blocked': result['publication_eligibility'] = 'partial'
+    require_publishable(result)
+    write(folder/'quality-report.json', result)
+    decision = {**decision, 'quality': result, 'validation': validation_result}
     return candidate, decision
 
 
+@candidate_operation
 def publish_base(folder):
     candidate, decision = validate_for_pack(folder)
     if decision['independent_question_ids']:
         raise ValueError('Independent route needs baseline and verification before publication')
+    candidate['run']['quality'] = decision['quality']
     output = publication_path(folder)
     used = {b['asset_id'] for q in candidate['questions'] for b in __import__('lab').question_blocks(q) if b['type'] == 'image'}
     for resource in candidate['assets']:
@@ -441,7 +559,8 @@ def finish_publication(folder, output, result, decision):
                             'answers_verified_by_ai': sum(q['answer']['status'] == 'verified' for q in final['questions']),
                             'independent_questions': len(decision['independent_question_ids']),
                             'accuracy': None,
-                            'note': 'Structural validation and AI review are not ground truth'}}
+                            'quality': final['run'].get('quality', decision.get('quality', summarize(final))),
+                             'note': 'Structural validation and AI review are not ground truth'}}
     if (output / 'run.json').exists():
         metadata['verification'] = read(output / 'run.json')
     if not decision['independent_question_ids']:
@@ -452,10 +571,13 @@ def finish_publication(folder, output, result, decision):
     return result
 
 
+@candidate_operation
 def baseline(folder):
-    _, decision = validate_for_pack(folder)
+    candidate, decision = validate_for_pack(folder)
     if not decision['independent_question_ids']:
         raise ValueError('This route publishes directly; no independent baseline needed')
+    candidate['run']['quality'] = decision['quality']
+    write(folder/'candidate.json',candidate)
     result = pack(folder / 'candidate.json')
     run = read(folder / 'run.json')
     run.update(status='packaged', finished_at=now(), final_sha256=digest(folder / 'final.json'),
@@ -484,6 +606,8 @@ def verify_command(args):
     if folder.name != 'verification' or folder.parent.name != '.work':
         raise ValueError('Expected .work/verification')
     configure_workspace(folder.parent.parent)
+    if args.action == 'commit-reading':
+        return verify.commit_reading(folder, args.batch, args.response)
     if args.action == 'check':
         return {'reports': len(verify.load_reports(folder)[2])}
     if args.action == 'decisions':
@@ -499,6 +623,8 @@ def verify_command(args):
 
 
 def main():
+    if hasattr(sys.stdout, 'reconfigure'): sys.stdout.reconfigure(encoding='utf-8')
+    if hasattr(sys.stderr, 'reconfigure'): sys.stderr.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('prepare')
@@ -512,20 +638,26 @@ def main():
     p.add_argument('--scale', type=float, default=1.5)
     p = sub.add_parser('inspect'); p.add_argument('--package', required=True)
     p = sub.add_parser('verify')
-    p.add_argument('action', choices=['prepare', 'check', 'decisions', 'consolidate', 'add-evidence'])
+    p.add_argument('action', choices=['prepare', 'check', 'decisions', 'consolidate', 'add-evidence', 'commit-reading'])
     p.add_argument('--run', required=True); p.add_argument('--session-id', default='unknown')
-    p.add_argument('--decisions'); p.add_argument('--batch'); p.add_argument('--requests')
-    for name in ('map', 'route', 'ingest', 'record-input', 'check-template', 'record-check', 'crops',
+    p.add_argument('--decisions'); p.add_argument('--batch'); p.add_argument('--requests'); p.add_argument('--response')
+    for name in ('map', 'route', 'ingest', 'record-input', 'record-usage', 'batch-plan', 'check-template', 'record-check', 'crops',
                  'validate', 'pack', 'baseline', 'resume', 'fail'):
         p = sub.add_parser(name); p.add_argument('--run', required=True)
         if name == 'map': p.add_argument('--selection', required=True)
-        if name in ('ingest', 'record-input', 'record-check'): p.add_argument('--response', required=True)
+        if name in ('ingest', 'record-input', 'record-check', 'record-usage'): p.add_argument('--response', required=True)
         if name == 'route':
             p.add_argument('--answer-key'); p.add_argument('--subagents', action='store_true')
             p.add_argument('--experimental', choices=['yes', 'no'])
+            p.add_argument('--review-question', action='append', default=[])
+            p.add_argument('--review-all', action='store_true')
         if name == 'crops': p.add_argument('--requests', required=True)
+        if name == 'batch-plan':
+            p.add_argument('--batch-size',type=int,default=5); p.add_argument('--max-characters',type=int,default=24000)
         if name == 'fail': p.add_argument('--reason', required=True)
     args = parser.parse_args()
+    stage_started = time.perf_counter()
+    folder = None
     try:
         if args.command == 'prepare': result = prepare(args)
         elif args.command == 'inspect': result = inspect_package(args.package)
@@ -533,9 +665,16 @@ def main():
         else:
             folder = base_folder(args.run)
             if args.command == 'map': result = map_questions(folder, args.selection)
-            elif args.command == 'route': result = route(folder, args.answer_key, args.subagents, args.experimental)
+            elif args.command == 'route':
+                review_ids = [q['id'] for q in read(folder/'candidate.json')['questions']] if args.review_all else args.review_question or None
+                result = route(folder, args.answer_key, args.subagents, args.experimental, review_ids)
             elif args.command == 'ingest': result = ingest(folder, args.response)
             elif args.command == 'record-input': result = record_input(folder, args.response)
+            elif args.command == 'record-usage': result = record_usage(folder,args.response)
+            elif args.command == 'batch-plan':
+                frozen_route(folder)
+                from batch_plan import plan_batches
+                result = plan_batches(read(folder/'candidate.json'),args.batch_size,args.max_characters)
             elif args.command == 'check-template': result = check_template(folder)
             elif args.command == 'record-check': result = record_check(folder, args.response)
             elif args.command == 'crops':
@@ -555,9 +694,14 @@ def main():
                 else:
                     result = engine.verify_resume(folder)
                     if (folder / 'route.json').exists(): frozen_route(folder)
+        if args.command == 'prepare': folder = Path(result['run'])
+        if folder is not None:
+            event(folder,'command_'+args.command,duration_seconds=time.perf_counter()-stage_started,outcome='completed')
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError, RuntimeError) as exc:
+        if folder is not None and (folder/'run.json').exists():
+            event(folder,'command_'+args.command,duration_seconds=time.perf_counter()-stage_started,outcome='failed')
         print(str(exc), file=sys.stderr)
         return 2
 

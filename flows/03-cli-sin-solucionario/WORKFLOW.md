@@ -1,0 +1,15 @@
+# CLI sin solucionario completo
+
+Usa este flujo si falta pauta válida para alguna pregunta. Una pauta parcial válida se conserva y solo se resuelve el subconjunto pendiente. Consulta el [procedimiento común](../../references/workflow.md), las [interfaces](../../references/interfaces.md), el [contrato de contenido](../../shared/references/content-contract.md) y, únicamente si se programa revisión independiente, la [auditoría](../../references/audit.md). Resuelve las rutas relativas desde la carpeta de SKILL.md.
+
+1. Comprueba lectura visual, recortes, ejecución Python/Node, validación y ZIP. Solicita destino si no existe uno indicado. Ejecuta `prepare --host cli`, lee todas las páginas y crea el mapa completo con `map`.
+2. Si hay pauta parcial, documenta identidad, cobertura y entradas legibles en `key.json`. Rechaza la asociación ambigua o incompatible; solicita aclaración cuando sea necesaria y registra la incidencia. Ejecuta `route` con la pauta válida, si existe. Declara `--subagents` solo cuando puedas crear revisores con contexto nuevo y evidencia visual suficiente.
+3. Registra lectura con `record-input`. Produce preguntas en lotes de hasta cinco. Usa la pauta únicamente para las cubiertas; resuelve `solve_question_ids` desde la evidencia del ensayo. Las respuestas de pauta y explicaciones de IA llevan su procedencia real. No inventes certeza donde el material sea ilegible.
+4. Coteja las seis dimensiones de cada pregunta con la fuente usando `check-template` y `record-check`. Mantén estructura KaTeX, tablas, recortes, explicaciones completas y cobertura total; marca `unresolved` las dudas.
+5. Ejecuta `validate`. Si `independent_question_ids` está vacío, usa `pack` y describe la revisión como propia. Si contiene preguntas, sigue `baseline`, `verify prepare`, informes de agentes con contexto nuevo, `verify check`, decisiones explícitas y `verify consolidate` según auditoría. Solo se revisa independientemente el subconjunto sin pauta. Los agentes pueden aportar valor, pero no se simula independencia cuando no están disponibles.
+6. Ejecuta `inspect` y entrega ZIP/.paessed, cobertura, respuestas de pauta/modelo, tipo de revisión y pendientes. La revisión independiente tampoco garantiza corrección matemática.
+
+
+## Contrato curricular 0.2.0
+
+Toda nueva importación M1 incorpora questions[].curriculum = {eje, subeje, en_temario}. Clasificar automáticamente cada pregunta por su contenido usando los cuatro ejes y 16 subejes de shared/references/curriculum-m1.json; consultar shared/references/curriculum-contract.md para pertenencia, evidencia y pendientes. No copiar la taxonomía de TESLA ni inferir desde numeración. Cada lote añade curriculum_provenance[id] con reason y evidence [{source_id,page,observation}]. Clasificar también preguntas sin pauta o cuya resolución experimental se rechazó. Conservar la incertidumbre como dudoso; un par null requiere CURRICULUM_PENDING y entrega curricular parcial. Los lectores admiten finales históricos 0.1.0 sin inventar clasificación; el manifiesto del paquete sigue en 0.1.0.

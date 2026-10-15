@@ -1,0 +1,15 @@
+# CLI con solucionario completo
+
+Usa este flujo cuando todas las preguntas del ensayo tengan entradas legibles en una pauta correspondiente. Consulta el [procedimiento común](../../references/workflow.md), las [interfaces](../../references/interfaces.md) y el [contrato de contenido](../../shared/references/content-contract.md) para construir las entradas. Resuelve las rutas relativas desde la carpeta de SKILL.md.
+
+1. Observa qué herramientas leen visualmente el PDF y permiten recortar, ejecutar Python/Node, validar y empaquetar. Elige lectura PDF nativa si permite examinar visuales fielmente; si no, usa las páginas renderizadas y registra `page_images_fallback`. Un motor de extracción textual puede ayudar a localizar contenido, pero contrasta su transcripción con la página.
+2. Solicita el destino antes de procesar, salvo que ya exista: Documentos (por defecto), Descargas o ruta personalizada. Ejecuta `prepare --host cli` con capacidades observadas. Lee todas las páginas y crea el mapa de preguntas.
+3. Documenta correspondencia y cobertura total en `key.json`; ejecuta `map` y `route --answer-key key.json`. Ante pauta parcial, ambigua o incompatible, vuelve a SKILL.md y selecciona el flujo adecuado antes de congelar route.
+4. Registra lectura con `record-input`. Produce lotes de hasta cinco. La pauta determina las respuestas. Reutiliza o resume las justificaciones disponibles; cuando solo haya letras, genera una explicación breve con procedencia `model`. Usa renders y recortes adicionales cuando una fórmula, tabla, gráfico o alternativa visual lo requiera. No hagas una resolución independiente completa: reduce razonamiento repetido sin reducir fidelidad.
+5. Coteja cada pregunta y sus seis dimensiones con `check-template` y `record-check`. Compara fracciones, raíces, ecuaciones, tablas, imágenes y explicaciones con sus páginas; conserva dudas como `unresolved`. Corrige contenido y renueva los cotejos afectados por cambios.
+6. Ejecuta `validate`, `pack` e `inspect`. Entrega rutas ZIP/.paessed, cobertura, procedencia y limitaciones. La pauta y el cotejo del productor no promueven estados a `verified`.
+
+
+## Contrato curricular 0.2.0
+
+Toda nueva importación M1 incorpora questions[].curriculum = {eje, subeje, en_temario}. Clasificar automáticamente cada pregunta por su contenido usando los cuatro ejes y 16 subejes de shared/references/curriculum-m1.json; consultar shared/references/curriculum-contract.md para pertenencia, evidencia y pendientes. No copiar la taxonomía de TESLA ni inferir desde numeración. Cada lote añade curriculum_provenance[id] con reason y evidence [{source_id,page,observation}]. Clasificar también preguntas sin pauta o cuya resolución experimental se rechazó. Conservar la incertidumbre como dudoso; un par null requiere CURRICULUM_PENDING y entrega curricular parcial. Los lectores admiten finales históricos 0.1.0 sin inventar clasificación; el manifiesto del paquete sigue en 0.1.0.

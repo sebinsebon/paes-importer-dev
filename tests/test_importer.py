@@ -61,7 +61,7 @@ class ImporterTests(unittest.TestCase):
         folder = Path(app.prepare(args)['run']); self.folder = folder
         selection = {'title': 'Synthetic M1', 'observed_question_count': 2,
             'observation': 'Fictional two-question fixture',
-            'expected_questions': [{'id': f'q{i}', 'number': str(i), 'source_id': 'exam', 'page': i} for i in (1,2)]}
+            'expected_questions': [{'id': f'q{i}', 'number': str(i), 'source_id': 'exam', 'page': i, 'option_labels':['A','B'], 'regions':([{'page':1,'bbox':[0,300,400,400]}] if i == 2 else []) + [{'page':i,'bbox':[0,0,400,400]}]} for i in (1,2)]}
         sf = self.fixture_file('selection.json', selection)
         configure_workspace(folder.parent.parent); app.map_questions(folder, sf)
         return folder
@@ -97,12 +97,15 @@ class ImporterTests(unittest.TestCase):
             q['explanation'] = {'blocks':[] if q['id'] in pending else [{'type':'math','latex':'2+2=4' if i==1 else '3+1=4','display':True}],
                 'status':'missing' if q['id'] in pending else 'provisional'}
             q['issues']=[]
+            q['curriculum']={'eje':'Números','subeje':'Conjunto de los números enteros y racionales','en_temario':'si'}
             if q['explanation']['blocks']:
                 provenance[q['id']]={'origin':explanation_origin}
                 if explanation_origin=='solution': provenance[q['id']].update(source_id='solution',page=1)
             questions.append(q)
-        response = self.fixture_file('response.json', {'run_id':data['run']['id'],'questions':questions,'explanation_provenance':provenance})
-        configure_workspace(folder.parent.parent); app.ingest(folder,response)
+        response = self.fixture_file('response.json', {'run_id':data['run']['id'],'questions':questions,'explanation_provenance':provenance, 'curriculum_provenance':{q['id']:{'reason':'Synthetic arithmetic requires addition of integers','evidence':[{'source_id':q['source_id'],'page':q['regions'][0]['page'],'observation':'Synthetic sum of integers'}]} for q in questions}})
+        configure_workspace(folder.parent.parent); result=app.ingest(folder,response)
+        if result['rejected']:
+            raise ValueError('; '.join(r['reason'] for r in result['rejected']))
         ledger = read(folder / 'direct-input.template.json')
         ledger.update(mode='page_images_fallback',reader='synthetic fixture renderer',visual_content_understood=True,
             capability_observation='Deterministic fictional fixture, not actual AI comprehension')
@@ -115,22 +118,49 @@ class ImporterTests(unittest.TestCase):
     def cotejo(self):
         record=app.check_template(self.folder); candidate=read(self.folder/'candidate.json')
         for row in record['questions']:
-            resource=next(e for e in candidate['evidence'] if e['source_id']=='exam')
-            for check in row['checks'].values():
-                check.update(status='pass',reason='Synthetic assertion only', evidence=[{'id':resource['id'],'sha256':resource['sha256'],'observation':'Fictional page'}])
+            resource=next(e for e in candidate['evidence'] if e['source_id']=='exam' and e['page']==int(next(q['number'] for q in candidate['questions'] if q['id']==row['id'])))
+            for dimension, check in row['checks'].items():
+                if dimension == 'answer' and (self.folder/'answer-key-map.json').exists():
+                    entry = next((e for e in read(self.folder/'answer-key-map.json')['entries'] if e['question_id'] == row['id']), None)
+                    if entry:
+                        resource = next(e for e in candidate['evidence'] if e['source_id'] == entry['source_id'] and e['page'] == entry['page'])
+                elif dimension == 'explanation' and read(self.folder/'explanation-provenance.json').get(row['id'], {}).get('origin') == 'solution':
+                    resource = next(e for e in candidate['evidence'] if e['source_id'] == 'solution' and e['page'] == 1)
+                else:
+                    resource = next(e for e in candidate['evidence'] if e['source_id'] == 'exam' and e['page'] == int(next(q['number'] for q in candidate['questions'] if q['id'] == row['id'])))
+                check.update(status='pass',reason='Synthetic assertion only', evidence=[{'id':resource['id'],'sha256':resource['sha256'],'observation':'Fictional page','fields':check['field_paths']}])
         f=self.fixture_file('check.json',record)
         configure_workspace(self.folder.parent.parent);app.record_check(self.folder,f)
+    def commit_blind(self, vf):
+        vr = read(vf/'run.json')
+        baseline = {q['id']: q for q in read(vf/'baseline.json')['questions']}
+        for bid in vr['batches']:
+            batch = vf/'batches'/bid
+            packet = read(batch/'input.json')
+            if packet.get('stage') != 'source-reading':
+                continue
+            report = read(batch/'reading-template.json')
+            report['reviewer'].update(id='fixture-reviewer',session_id=bid+'-synthetic-session',model='synthetic',effort='synthetic',fresh_context=True)
+            for row in report['questions']:
+                source = baseline[row['id']]
+                row.update({k:copy.deepcopy(source[k]) for k in ('stem','options','regions')})
+                ev = next(e for e in packet['evidence'] if e['source_id'] == row['source_id'] and e['page'] == int(row['number']))
+                row['evidence'] = [{'path':ev['path'],'sha256':ev['sha256'],'observation':'Synthetic source reading'}]
+            write(batch/'reading-response.json', report)
+            verify.commit_reading(vf,bid,batch/'reading-response.json')
+
     def independent_reports(self):
         folder=self.folder
         app.baseline(folder)
         original=(folder/'final.json').read_bytes(); original_run=(folder/'run.json').read_bytes()
         vf=Path(verify.prepare(folder,'synthetic-review',10,'synthetic','synthetic','synthetic-coordinator',folder.parent.parent))
+        self.commit_blind(vf)
         vr=read(vf/'run.json')
         for bid in vr['batches']:
             batch=vf/'batches'/bid; packet=read(batch/'input.json'); report=read(batch/'report-template.json')
             report['reviewer'].update(id='fixture-reviewer',session_id=bid+'-synthetic-session',model='synthetic',effort='synthetic',fresh_context=True)
             for row in report['questions']:
-                ev=packet['evidence'][0]; evidence=[{'path':ev['path'],'sha256':ev['sha256'],'observation':'Synthetic test assertion only'}]
+                ev=next(e for e in packet['evidence'] if e['source_id']=='exam' and e['page']==int(next(q['number'] for q in packet['questions'] if q['id']==row['id']))); evidence=[{'path':ev['path'],'sha256':ev['sha256'],'observation':'Synthetic test assertion only'}]
                 for check in row['checks'].values():check.update(status='pass',reason='Synthetic pass',evidence=evidence)
                 row['post_checks']={k:'pass' for k in app.CHECKS}
                 row['independent_solution']={'label':'B','reasoning':'Fictional arithmetic fixture','evidence':evidence}
@@ -236,7 +266,54 @@ class ImporterTests(unittest.TestCase):
         self.start();self.route();self.produce();c=read(self.folder/'candidate.json')
         c['questions'][0]['stem'][0]['text']='Changed fictional wording';write(self.folder/'candidate.json',c)
         with self.assertRaisesRegex(ValueError,'Stale'):app.validate_for_pack(self.folder)
+        q=c['questions'][0]
+        f=self.fixture_file('curriculum-refresh.json',{'run_id':c['run']['id'],'questions':[q],
+            'explanation_provenance':{'q1':{'origin':'model'}},'curriculum_provenance':{'q1':read(self.folder/'curriculum-ledger.json')['q1']}})
+        configure_workspace(self.folder.parent.parent);app.ingest(self.folder,f)
         self.cotejo();app.publish_base(self.folder)
+    def test_unresolved_dimension_survives_publication(self):
+        self.start();self.route();self.produce()
+        record=read(self.home/'check.json')
+        record['questions'][0]['checks']['consistency']['status']='unresolved'
+        record['questions'][0]['checks']['consistency']['reason']='Synthetic source ambiguity'
+        f=self.fixture_file('pending-check.json',record)
+        configure_workspace(self.folder.parent.parent);app.record_check(self.folder,f)
+        result=app.publish_base(self.folder)
+        quality=result['summary']['quality']
+        self.assertEqual(quality['publication_eligibility'],'partial')
+        self.assertTrue(any(i['code']=='COTEJO_UNRESOLVED' and i['field']=='consistency' for i in quality['issues']))
+        self.assertEqual(read(self.folder.parent.parent/'final.json')['run']['quality'],quality)
+
+    def test_frozen_option_order_after_independent_proposal(self):
+        self.start(solution=False);self.route(subagents=True);self.produce()
+        vf,_,_=self.independent_reports()
+        report=read(vf/'batches/batch-01/report.json');row=report['questions'][0]
+        original=read(vf/'baseline.json')['questions'][0]['options']
+        row['changes']=[{'field':'options','before':original,'after':list(reversed(original)),
+                       'reason':'Synthetic reordered proposal','evidence':row['checks']['options']['evidence']}]
+        write(vf/'batches/batch-01/report.json',report)
+        with self.assertRaisesRegex(ValueError,'frozen observed labels'):verify.load_reports(vf)
+
+    def test_untouched_source_warning_survives_subset_review(self):
+        self.start();self.route(('q1',),subagents=True);self.produce()
+        record=read(self.home/'check.json')
+        record['questions'][0]['checks']['consistency']['status']='unresolved'
+        record['questions'][0]['checks']['consistency']['reason']='Synthetic unresolved original question'
+        f=self.fixture_file('subset-check.json',record)
+        configure_workspace(self.folder.parent.parent);app.record_check(self.folder,f)
+        vf,_,_=self.independent_reports()
+        verify.consolidate(vf,vf/'decisions.json')
+        final=read(self.folder.parent.parent/'final.json')
+        self.assertTrue(any(i['question_id']=='q1' and i['code']=='COTEJO_UNRESOLVED' for i in final['run']['quality']['issues']))
+        self.assertEqual(final['run']['quality']['publication_eligibility'],'partial')
+
+    def test_engine_cannot_mutate_finalized_candidate(self):
+        self.start();self.route();self.produce();app.publish_base(self.folder)
+        before=(self.folder/'candidate.json').read_bytes()
+        with self.assertRaisesRegex(ValueError,'finalized'):
+            app.engine.ingest(self.folder,self.home/'response.json')
+        self.assertEqual((self.folder/'candidate.json').read_bytes(),before)
+
     def test_fake_evidence_hash_rejected(self):
         self.start();self.route();self.produce();r=read(self.home/'check.json')
         r['questions'][0]['checks']['stem']['evidence'][0]['sha256']='0'*64
@@ -296,7 +373,8 @@ class ImporterTests(unittest.TestCase):
         c=read(self.folder/'candidate.json')
         q=copy.deepcopy(c['questions'][0]);q['options'][1]['blocks'].append({'type':'image','asset_id':'figure','alt':'Fictional option B'})
         q['answer']={'label':'A','origin':'model','status':'provisional','source_ref':None}
-        response={'run_id':c['run']['id'],'questions':[q],'explanation_provenance':{'q1':{'origin':'model'}}}
+        response={'run_id':c['run']['id'],'questions':[q],'explanation_provenance':{'q1':{'origin':'model'}},
+            'curriculum_provenance':{'q1':read(self.folder/'curriculum-ledger.json')['q1']}}
         f=self.fixture_file('alternative.json',response); configure_workspace(self.folder.parent.parent)
         app.ingest(self.folder,f)
         self.assertEqual(read(self.folder/'candidate.json')['questions'][0]['answer']['label'],'B')
@@ -330,6 +408,7 @@ class ImporterTests(unittest.TestCase):
         self.start(solution=False);self.route(subagents=True);self.produce();app.baseline(self.folder)
         vf=Path(verify.prepare(self.folder,'review',1,'synthetic','synthetic','coord',self.folder.parent.parent))
         self.assertEqual(len(read(vf/'run.json')['batches']),2)
+        self.commit_blind(vf)
         before=read(vf/'batches/batch-01/input.json')
         verify.add_evidence(vf,'batch-01',[{'id':'extra','question_id':'q1','page':2,'role':'evidence','reason':'Synthetic multi-page check'}])
         after=read(vf/'batches/batch-01/input.json')
@@ -354,7 +433,14 @@ class ImporterTests(unittest.TestCase):
             write(p,report)
             decision=read(vf/'decisions.json');decision['decisions']=[{'batch_id':'batch-01','question_id':'q1','field':'explanation',
                 'report_sha256':digest(p),'accept':accepted,'reason':'Synthetic coordinator decision','evidence':evidence if accepted else []}]
-            write(vf/'decisions.json',decision);verify.consolidate(vf,vf/'decisions.json')
+            write(vf/'decisions.json',decision)
+            if not accepted:
+                with self.assertRaisesRegex(ValueError,'Critical'):
+                    verify.consolidate(vf,vf/'decisions.json')
+                self.assertFalse((self.folder.parent.parent/'final.json').exists())
+                self.assertEqual((self.folder/'final.json').read_bytes(),original)
+                continue
+            verify.consolidate(vf,vf/'decisions.json')
             q=read(self.folder.parent.parent/'final.json')['questions'][0]
             self.assertEqual(q['explanation']['blocks'],after['blocks'] if accepted else before['blocks'])
             self.assertEqual(q['answer']['status'],'verified' if accepted else 'provisional')
