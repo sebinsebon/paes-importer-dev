@@ -271,9 +271,14 @@ def inspect_package(path):
         if len({n.casefold() for n in names}) != len(names):
             raise ValueError('Duplicate archive path')
         for e in entries:
-            relative_path(e.filename)
+            # JSZip exports explicit empty directories. Match the browser reader:
+            # validate their paths, then exclude them from the file inventory.
+            relative_path(e.filename[:-1] if e.is_dir() else e.filename)
+            if e.is_dir() and (not e.filename.startswith(('assets/', 'evidence/')) or e.file_size):
+                raise ValueError(f'Unexpected or nonempty archive directory: {e.filename}')
             if (e.external_attr >> 16) & 0o170000 == 0o120000:
                 raise ValueError('Archive contains a symlink')
+        names = [e.filename for e in entries if not e.is_dir()]
         if not {'final.json', 'manifest.json'}.issubset(names):
             raise ValueError('Missing final.json or manifest.json at archive root')
         manifest = json.loads(z.read('manifest.json'))
