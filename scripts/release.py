@@ -20,7 +20,7 @@ def records():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(); parser.add_argument('--write', action='store_true')
     args = parser.parse_args()
-    manifest = {'version': '1.1.0-portable', 'protocol_version': '0.3.0', 'files': records()}
+    manifest = {'version': '1.2.0-portable', 'protocol_version': '0.3.0', 'files': records()}
     if args.write:
         (ROOT / 'release.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
     else:

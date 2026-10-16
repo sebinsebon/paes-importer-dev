@@ -436,6 +436,8 @@ def decisions(folder):
 def consolidate(folder, decision_file):
     start = time.perf_counter()
     run, baseline, reports = load_reports(folder)
+    from output_policy import require_official_final
+    require_official_final(baseline)
     if run['status'] != 'awaiting_reviews':
         raise ValueError('Already consolidated; use new experiment for a new pass')
     decision = read(decision_file)

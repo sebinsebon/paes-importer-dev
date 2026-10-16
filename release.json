@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0-portable",
+  "version": "1.2.0-portable",
   "protocol_version": "0.3.0",
   "files": [
     {
@@ -8,31 +8,31 @@
     },
     {
       "path": "NOTICE.md",
-      "sha256": "6cf7d7e9e43243e3289edb9bf574a69c156a180c8ffc5397b1a895f0d0ea8fb1"
+      "sha256": "1e2605a8b5d21a492687936455ffb51fd6d2fe71a62a479cd12602daa573f936"
     },
     {
       "path": "README.md",
-      "sha256": "88d7f4175d1c7faad65eeccfb58a68c0e88f46e7df15a75823955d18bc03832d"
+      "sha256": "c96d26bb30af60dd55fad8e8c545efe6f740841cd93be1a71ea2e971739fdf00"
     },
     {
       "path": "SKILL.md",
-      "sha256": "e22c5d789d27a053d9382838fc95aaba5e9b021730bbfe5e5909b488cd26c653"
+      "sha256": "44be4d23f2e1c3bafe2c1d310f15fd74aaa305277aab37702de4b167e96e03f8"
     },
     {
       "path": "flows/01-chat-con-solucionario/WORKFLOW.md",
-      "sha256": "d079126ce39cb3d28dff33d881d036f0219aaffb247e0d218239f4f36c191a1c"
+      "sha256": "3168ff7f5eb3c8e3ab28ee2712ebe9939a0afda976f58d647e5aa0d45c81b056"
     },
     {
       "path": "flows/02-cli-con-solucionario/WORKFLOW.md",
-      "sha256": "b50515a296abdc74946956d360376396a1526c6db232c3694c51a5a0f57f757b"
+      "sha256": "4017f5266eb1408d64991e2f79fc8fb338a257a4c9ca9144b091fa7bd1a1c92d"
     },
     {
       "path": "flows/03-cli-sin-solucionario/WORKFLOW.md",
-      "sha256": "a8694511e0dfd96961012efcff2f55e11b0b159971d96cac142c2406295c7eed"
+      "sha256": "ccaa1bf0b38413a84a6b16bf799c3d204a4e3f30700575ca1a46b3010dc8e2d7"
     },
     {
       "path": "flows/04-chat-sin-solucionario/WORKFLOW.md",
-      "sha256": "28c4544abc5d74dfe57751d029a949a6ee101dbe193b5227cce5a67267669113"
+      "sha256": "e4228a231470c7d8d1b2182e7a40e6d3db20d08daebe676be2acf398a7c81a91"
     },
     {
       "path": "references/audit.md",
@@ -40,15 +40,15 @@
     },
     {
       "path": "references/hosts.md",
-      "sha256": "b9320f7aa29a39b9a8df9d429467e0e3d105ee5be5190b9ac1f80cabf9888db7"
+      "sha256": "c9507c5e25d9ef1f42d4b0d9f7aae2a063fd79ffa7dd9360c8982ffc38b88b50"
     },
     {
       "path": "references/interfaces.md",
-      "sha256": "8f9b1a67871359dc71b1ba3cb7676f9393ac6bcf7763d239868f63d362ad9c20"
+      "sha256": "4e4838341bfe7542a66306a0689580314116bcd6772deb41b12f26b5d9ad5ada"
     },
     {
       "path": "references/workflow.md",
-      "sha256": "f1441d522b6438f00e805636352ecbdd5ed136113adb1e1350facc9d19c65c42"
+      "sha256": "52552845401142777c3d92b210914e20835fe3020e98790fc546fe14106518f1"
     },
     {
       "path": "requirements.txt",
@@ -60,7 +60,7 @@
     },
     {
       "path": "scripts/importer.py",
-      "sha256": "6abc2116eee05ce2c9735798b71836c96573342281feabb62e26d9765ebc21b1"
+      "sha256": "1846e18357e5ccea0caf79a7f7f5a3eccaf0b8678f335cd5e8c0257583a870ae"
     },
     {
       "path": "scripts/make_bundle.py",
@@ -72,7 +72,7 @@
     },
     {
       "path": "scripts/release.py",
-      "sha256": "b4e31413780503e8d6a9c93811c8745de93e674f95106071b9fd5f9ef0d185db"
+      "sha256": "3e7cb6bee5684000271dd1c9690c08e7a07de21f4d56c76689dff3c911507b54"
     },
     {
       "path": "scripts/setup.py",
@@ -80,7 +80,7 @@
     },
     {
       "path": "scripts/verify.py",
-      "sha256": "f710b304ba58626ad3ae7ff76ef95281711a957e353e7ab1e96f6f978c91d522"
+      "sha256": "d207917fa30b7ddbe251fba93a98e81c1bdd25942d8ed9a931d7ee05c02d2efd"
     },
     {
       "path": "scripts/write_json.ps1",
@@ -88,11 +88,11 @@
     },
     {
       "path": "shared/references/content-contract.md",
-      "sha256": "dd2e991cafec5423a9998d262a7ff9f16af1708cf2c7fcf016dd40f6497c69a9"
+      "sha256": "1997cc666334a4d5cc54be841f671c5f0fc60b566d83e1d9173a12c5e1b56987"
     },
     {
       "path": "shared/references/curriculum-contract.md",
-      "sha256": "c2d56c4e899903ef6e351df46b91efaf970fac884c915c74d4abcd28017e53d2"
+      "sha256": "06145aebda0917f80f5add8c2e176c676773fdb8d4df688f52bdbc2a6d8e8373"
     },
     {
       "path": "shared/references/curriculum-m1.json",
@@ -100,7 +100,15 @@
     },
     {
       "path": "shared/references/package-contract.md",
-      "sha256": "63fa8e3dae934705d42c0945ea1d239538e1d29b83748122f5277818075b2ca8"
+      "sha256": "f0cd1a4046069e0856056859071af01895607e6f84368870aa73a6bbca051331"
+    },
+    {
+      "path": "shared/schemas/ai-response.schema.json",
+      "sha256": "0ab1fb00b061e445334fa10f1ad4bbb3b572760c6051c13489ea9617fd45252e"
+    },
+    {
+      "path": "shared/schemas/draft.v1.schema.json",
+      "sha256": "d091addd8791dfd197ed28a07edb295005bfbab988fc1ffdb472e55119dad476"
     },
     {
       "path": "shared/schemas/final-0.1.schema.json",
@@ -139,6 +147,30 @@
       "sha256": "2842bef8bbd628e7ad9a8757b14ab552f9e0190dfb3d76eb3799e905c1800d6e"
     },
     {
+      "path": "shared/scripts/draft_adapter.py",
+      "sha256": "ad0b2fc03dbed30e908e7ae5a7d4984be98d51f65bb098756925fa745072d26d"
+    },
+    {
+      "path": "shared/scripts/draft_v1/__init__.py",
+      "sha256": "e85e387c088ec86d859df71d9506a3764440c36ee9ece10957e38b65a7863d44"
+    },
+    {
+      "path": "shared/scripts/draft_v1/draft_contract.py",
+      "sha256": "9425ee5121f54fb15fd9afc7f477e170b4c980925ed7b149a97143974f67846c"
+    },
+    {
+      "path": "shared/scripts/draft_v1/math_syntax.py",
+      "sha256": "5faaf6ef93819090e0a8429877c66f876ac7005462ba53df2c02f0314fa54dcb"
+    },
+    {
+      "path": "shared/scripts/draft_v1/provenance.json",
+      "sha256": "251bbb8a365bde7f2eff475ab0e62c9970376ebe70d587299a9227e719351776"
+    },
+    {
+      "path": "shared/scripts/draft_v1/structural_fidelity.py",
+      "sha256": "c814784ffc7d01d3053454f8ec096fd452412ce8ee8854455e694d8672833218"
+    },
+    {
       "path": "shared/scripts/evidence.py",
       "sha256": "9beb835952ff7dd07755d2eb2384180a8a0646f435e6667198d877556c0b601e"
     },
@@ -149,6 +181,10 @@
     {
       "path": "shared/scripts/metrics.py",
       "sha256": "985ad1f289f2bd62c08a5bf7a3bd71c5d35cba61ad28052ea7689f843b5798c2"
+    },
+    {
+      "path": "shared/scripts/output_policy.py",
+      "sha256": "57e5ff58a34fff50ac1bf037465864afd2950fedf0dda33c6794e2c10ddfd36d"
     },
     {
       "path": "shared/scripts/package_io.py",

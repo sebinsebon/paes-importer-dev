@@ -25,7 +25,7 @@ AGENTS.md permitía escribir en Test2/tmp y mencionaba V1/V2. Ahora delimita el 
 
 ## Compatibilidad conservada
 
-Se mantienen sin modificación el schema completo (incluido su título histórico), el lector y validador del viewer, las bibliotecas, los contratos de contenido/paquete y las referencias de auditoría. Se conservan paessed-benchmark, paessed-package, schema_version 0.1.0, pdf-direct, direct/direct-verified, direct-verification-1.0, paired-experiment y los demás campos existentes. El alias UPSTREAM sigue apuntando a la propia raíz de la skill. Las menciones v1 en mensajes de verificación describen el contrato base, no una carpeta requerida.
+Se mantienen sin modificación el schema completo (incluido su título histórico), el lector y validador del viewer, las bibliotecas, los contratos de contenido/paquete y las referencias de auditoría. Se conservan paessed-benchmark y paessed-package; contenido nuevo 0.2.0, lectura histórica y manifiesto contenedor 0.1.0; pdf-direct, direct/direct-verified, direct-verification-1.0, paired-experiment y los demás campos existentes. El alias UPSTREAM sigue apuntando a la propia raíz de la skill. Las menciones v1 en mensajes de verificación describen el contrato base, no una carpeta requerida.
 
 No se modifican la selección Chat/CLI, el consentimiento experimental, el cotejo, los estados de revisión, el sistema de auditoría ni el contenido del ZIP/.paessed. release.json se regenera para reflejar los cambios intencionales; las ejecuciones anteriores conservan sus controles de integridad y no se reanudan con hashes sustituidos.
 

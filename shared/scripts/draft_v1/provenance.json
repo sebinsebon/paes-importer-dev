@@ -1,0 +1,38 @@
+{
+  "origin": "PAESSED.CL",
+  "commit": "73ca933f064126b7826d75659f594258829159cc",
+  "license": "MIT; copyright 2026 PAESSED contributors",
+  "changes": "Relative imports within draft_v1; schema resolved from shared/schemas; LF line endings. Validation semantics unchanged.",
+  "files": [
+    {
+      "source": "scripts/draft_contract.py",
+      "source_sha256": "32f339c22e78c9e100fad6bf1a4e67bc60f0420b12a0645d6ad5345f41555198",
+      "bundled": "shared/scripts/draft_v1/draft_contract.py",
+      "bundled_sha256": "9425ee5121f54fb15fd9afc7f477e170b4c980925ed7b149a97143974f67846c"
+    },
+    {
+      "source": "scripts/structural_fidelity.py",
+      "source_sha256": "45aac84eae2ee2d1a1db177a4a5346552abae198032a907b4bde58acb8ac56b3",
+      "bundled": "shared/scripts/draft_v1/structural_fidelity.py",
+      "bundled_sha256": "c814784ffc7d01d3053454f8ec096fd452412ce8ee8854455e694d8672833218"
+    },
+    {
+      "source": "scripts/math_syntax.py",
+      "source_sha256": "5faaf6ef93819090e0a8429877c66f876ac7005462ba53df2c02f0314fa54dcb",
+      "bundled": "shared/scripts/draft_v1/math_syntax.py",
+      "bundled_sha256": "5faaf6ef93819090e0a8429877c66f876ac7005462ba53df2c02f0314fa54dcb"
+    },
+    {
+      "source": "schema/draft.v1.schema.json",
+      "source_sha256": "d091addd8791dfd197ed28a07edb295005bfbab988fc1ffdb472e55119dad476",
+      "bundled": "shared/schemas/draft.v1.schema.json",
+      "bundled_sha256": "d091addd8791dfd197ed28a07edb295005bfbab988fc1ffdb472e55119dad476"
+    },
+    {
+      "source": "schema/ai-response.schema.json",
+      "source_sha256": "0ab1fb00b061e445334fa10f1ad4bbb3b572760c6051c13489ea9617fd45252e",
+      "bundled": "shared/schemas/ai-response.schema.json",
+      "bundled_sha256": "0ab1fb00b061e445334fa10f1ad4bbb3b572760c6051c13489ea9617fd45252e"
+    }
+  ]
+}

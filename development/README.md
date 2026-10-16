@@ -2,6 +2,8 @@
 
 Este directorio **no forma parte de la skill para agentes** ni del ZIP distribuible. Conserva informes y decisiones históricas, no instrucciones para importar ensayos.
 
+La fuente versionada de la herramienta canónica es [contract-maintenance.py](contract-maintenance.py). La copia instalada vive en `contrato/mantenimiento/contract.py`. Desde el clon: `python -B development/contract-maintenance.py check --contract-root RUTA_CONTRATO --importer . --web RUTA_WEB`. El contrato local conserva sus especificaciones e informes privados; Git distribuye los esquemas, validadores y referencias normativas portables, sin paquetes TESLA ni capturas de auditoría.
+
 - [VERIFICATION.md](VERIFICATION.md): resultados históricos de pruebas.
 - [PORTABILITY.md](PORTABILITY.md): informe de portabilidad.
 - [DECISIONS.md](DECISIONS.md): decisiones durante el desarrollo.

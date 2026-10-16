@@ -8,7 +8,7 @@ Resuelve scripts, schemas y validadores desde la carpeta que contiene SKILL.md, 
 
 Antes de prepare, observa capacidades reales y registra capabilities.json en el espacio de trabajo. Debe contener pdf_visual, crop, execute, zip y validate como booleanos, además de una observation concreta. No declares true basándote solo en la presencia de un renderizador. Si falta una capacidad indispensable, comunica el impedimento. Para chat web, comprueba además que puedes entregar el ZIP.
 
-**Destino según host:** en CLI, pregunta por Documentos (por defecto), Descargas o carpeta personalizada salvo que ya esté indicado. En Chat Web, **no preguntes ubicación ni carpeta**: usa un directorio temporal escribible, omite `--suggested-save-location` salvo petición expresa y entrega el ZIP directamente en el chat. No prometas haber escrito archivos en el equipo del usuario.
+**Destino según host:** en CLI, pregunta por Documentos (por defecto), Descargas o carpeta personalizada salvo que ya esté indicado. En Chat Web, **no preguntes ubicación ni carpeta**: usa un directorio temporal escribible, omite `--suggested-save-location` salvo petición expresa y entrega el .paessed oficial y el ZIP idéntico directamente en el chat. No prometas haber escrito archivos en el equipo del usuario.
 
 ~~~text
 python -B scripts/importer.py prepare --exam /ruta/ensayo.pdf --solution /ruta/pauta.pdf --host cli --client codex --session-id SESION_REAL --model MODELO_OBSERVADO --effort ESFUERZO_OBSERVADO --destination documents --capabilities /ruta/capabilities.json
@@ -53,12 +53,12 @@ Con pauta parcial, resuelve solo solve_question_ids. Si el usuario web rechazó 
 ~~~text
 python -B scripts/importer.py validate --run RUN
 python -B scripts/importer.py pack --run RUN
-python -B scripts/importer.py inspect --package ARCHIVO.zip
+python -B scripts/importer.py inspect --package ARCHIVO.paessed
 ~~~
 
 pack publica directamente si la ruta no requiere auditoría independiente. Si la requiere, bloquea publicación hasta baseline y la [auditoría CLI](audit.md), cuando la ruta selecciona revisión independiente. Reintenta únicamente preguntas rechazadas por ingest, conservando accepted/unchanged y versiones. El límite es tres intentos por pregunta y el presupuesto disponible; si no basta, amplía evidencia, deja pendientes válidos o registra el fallo. No inventes datos para aprobar.
 
-El ZIP contiene final.json, manifest.json y assets usados; excluye PDFs, trazas y evidencias. El .paessed tiene bytes idénticos. Entrega cobertura, respuestas y explicaciones de pauta/modelo/pendientes, tipo de revisión y dudas. Una pauta, cotejo propio o validación estructural no equivalen a verified.
+El .paessed contiene final.json 0.2.0, manifest.json 0.1.0 y assets usados; excluye PDFs, draft.json, trazas y evidencias. El ZIP acompañante tiene bytes idénticos. Empaquetado directo y consolidación auditada rechazan una salida nueva 0.1.0; no conviertas silenciosamente una ejecución histórica. Entrega cobertura, respuestas y explicaciones de pauta/modelo/pendientes, tipo de revisión y dudas. Una pauta, cotejo propio o validación estructural no equivalen a verified.
 
 ~~~text
 python -B scripts/importer.py resume --run RUN
@@ -75,3 +75,5 @@ Toda nueva importación M1 incorpora questions[].curriculum = {eje, subeje, en_t
 ## Medición real
 
 Registrar únicamente medidas expuestas por el proveedor y tiempos observados. Conservar IDs de llamada únicos para evitar duplicar coordinador y agentes; los faltantes permanecen null y los subtotales conocidos se separan del total. No inferir consumo desde caracteres ni declarar ahorro por utilizar el plan de lotes. El protocolo de experimentos está en development/benchmark-protocol.md; los tests de implementación siguen siendo sintéticos.
+
+Para aprovechar el extractor previo, usa `adapt-draft --run RUN --draft ARCHIVO` después de map/route; consulta [su interfaz y límites](interfaces.md#draftjson-v1-del-extractor-previo). Continúa con lectura, cotejo, clasificación/resolución y revisión exigidas antes de entregar.

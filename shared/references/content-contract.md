@@ -1,6 +1,6 @@
 # Contrato de contenido portable
 
-Schema autoritativo: ../schemas/final.schema.json. Formato paessed-benchmark, schema_version 0.2.0 (lectura histórica 0.1.0), pipeline pdf-direct. El nombre histórico se conserva por compatibilidad; esta importación no es un benchmark de precisión. Compatible con el lector local, sin acreditar integración con PAESSED Web.
+Esquema normativo distribuido: ../schemas/final.schema.json. Formato paessed-benchmark, schema_version 0.2.0 (lectura histórica 0.1.0), pipeline pdf-direct. El nombre histórico se conserva por compatibilidad; esta importación no es un benchmark de precisión. Lectura compatible con el visor portable y el consumidor local paesseduiux; el soporte técnico no certifica contenido ni acredita todos los entornos.
 
 Raíz: format/schema_version/pipeline/run/exam/sources/questions/assets/evidence. No añadir campos a preguntas. run admite metadatos del modo. sources contiene ID, nombre, SHA-256, page_count y role exam/solution; nunca PDF ni ruta local.
 
@@ -33,3 +33,7 @@ Cambiar contenido o solución invalida su cotejo. Conservar originales y version
 ## Contrato curricular 0.2.0
 
 Toda nueva importación M1 incorpora questions[].curriculum = {eje, subeje, en_temario}. Clasificar automáticamente cada pregunta por su contenido usando los cuatro ejes y 16 subejes de shared/references/curriculum-m1.json; consultar shared/references/curriculum-contract.md para pertenencia, evidencia y pendientes. No copiar la taxonomía de TESLA ni inferir desde numeración. Cada lote añade curriculum_provenance[id] con reason y evidence [{source_id,page,observation}]. Clasificar también preguntas sin pauta o cuya resolución experimental se rechazó. Conservar la incertidumbre como dudoso; un par null requiere CURRICULUM_PENDING y entrega curricular parcial. Los lectores admiten finales históricos 0.1.0 sin inventar clasificación; el manifiesto del paquete sigue en 0.1.0.
+
+## Fuente y distribución del contrato
+
+La fuente canónica de mantenimiento es la carpeta `contrato/0.2.0` del espacio PAESSED. Este documento y los esquemas, catálogo y validadores incluidos son copias normativas distribuibles: el runtime los resuelve dentro del bundle y no necesita esa carpeta externa. El manifiesto `contrato/sincronizacion.json` fija sus hashes; `contrato/mantenimiento/contract.py check` detecta divergencias antes de publicar una release. Las nuevas entregas oficiales usan contenido `paessed-benchmark/0.2.0` y paquete `paessed-package/0.1.0`. La compatibilidad de lectura 0.1.0 no autoriza nueva emisión 0.1.0.
