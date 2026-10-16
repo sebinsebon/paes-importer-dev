@@ -20,6 +20,7 @@ from lab import (artifact_path, configure_workspace, digest, event, inside, json
 from package_io import inspect_package, pack, validate
 from pdf_assets import apply_crops, prepare_catalog, source_record
 from direct_gate import validate_direct_input
+from output_policy import require_official_final
 from evidence import field_paths, validate_citations, validate_geometry, validate_mapping
 from quality import summarize, require_publishable
 import pipeline as engine
@@ -266,6 +267,14 @@ def ensure_editable(folder):
         raise ValueError('Preserve completed/failed runs; use a new run')
 
 
+@candidate_operation
+def adapt_draft(folder, draft_file):
+    ensure_editable(folder)
+    frozen_route(folder)
+    from draft_adapter import adapt
+    return adapt(folder, draft_file)
+
+
 def frozen_route(folder):
     engine.verify_resume(folder)
     run, decision = read(folder / 'run.json'), read(folder / 'route.json')
@@ -463,6 +472,7 @@ def validate_for_pack(folder):
     decision = frozen_route(folder)
     candidate = read(folder / 'candidate.json')
     engine.validate_run_contract(folder / 'candidate.json')
+    require_official_final(candidate)
     for field in ('processing_mode', 'review_mode'):
         if candidate['run'].get(field) != decision[field]:
             raise ValueError('Candidate changed selected mode')
@@ -637,6 +647,7 @@ def main():
     p.add_argument('--session-id', required=True); p.add_argument('--capabilities', required=True)
     p.add_argument('--scale', type=float, default=1.5)
     p = sub.add_parser('inspect'); p.add_argument('--package', required=True)
+    p = sub.add_parser('adapt-draft'); p.add_argument('--run', required=True); p.add_argument('--draft', required=True)
     p = sub.add_parser('verify')
     p.add_argument('action', choices=['prepare', 'check', 'decisions', 'consolidate', 'add-evidence', 'commit-reading'])
     p.add_argument('--run', required=True); p.add_argument('--session-id', default='unknown')
@@ -669,6 +680,7 @@ def main():
                 review_ids = [q['id'] for q in read(folder/'candidate.json')['questions']] if args.review_all else args.review_question or None
                 result = route(folder, args.answer_key, args.subagents, args.experimental, review_ids)
             elif args.command == 'ingest': result = ingest(folder, args.response)
+            elif args.command == 'adapt-draft': result = adapt_draft(folder, args.draft)
             elif args.command == 'record-input': result = record_input(folder, args.response)
             elif args.command == 'record-usage': result = record_usage(folder,args.response)
             elif args.command == 'batch-plan':

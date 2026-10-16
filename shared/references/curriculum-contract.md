@@ -15,3 +15,7 @@ Cambiar enunciado u opciones invalida la revisión curricular; cambiar sólo cur
 ## Compatibilidad
 
 Los lectores aceptan finales 0.1.0 y 0.2.0. Los históricos no se rellenan al abrirse. El contenedor .paessed/ZIP y manifest.json mantienen paessed-package/0.1.0. Activar lectores compatibles antes de productores nuevos. Un run antiguo debe usar su release congelado; no se promete reanudarlo con una instalación nueva.
+
+## Fuente y distribución del contrato
+
+La fuente canónica de mantenimiento es la carpeta `contrato/0.2.0` del espacio PAESSED. Este documento y los esquemas, catálogo y validadores incluidos son copias normativas distribuibles: el runtime los resuelve dentro del bundle y no necesita esa carpeta externa. El manifiesto `contrato/sincronizacion.json` fija sus hashes; `contrato/mantenimiento/contract.py check` detecta divergencias antes de publicar una release. Las nuevas entregas oficiales usan contenido `paessed-benchmark/0.2.0` y paquete `paessed-package/0.1.0`. La compatibilidad de lectura 0.1.0 no autoriza nueva emisión 0.1.0.

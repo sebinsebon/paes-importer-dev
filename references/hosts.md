@@ -16,5 +16,5 @@ Codex: bundle completo bajo .agents/skills/paes-importer o lectura explícita po
 
 Claude Code: bundle completo bajo .claude/skills/paes-importer o lectura explícita. Usar un subagente nuevo por lote; evitar forks que hereden historial productor. Fuentes oficiales: https://code.claude.com/docs/en/skills y https://code.claude.com/docs/en/sub-agents.
 
-Chat web: obtener bundle, ejecutar Python/Node en workspace cuando estén disponibles, recortar y entregar enlace ZIP. Si no dispone de dependencias y no puede prepararlas, informar impedimento. Esperar consentimiento cuando falte pauta. Sin acceso al equipo, el destino local se elige al descargar.
+Chat web: obtener bundle, ejecutar Python/Node en workspace cuando estén disponibles, recortar y entregar enlaces .paessed y ZIP idéntico. Si no dispone de dependencias y no puede prepararlas, informar impedimento. Esperar consentimiento cuando falte pauta. Sin acceso al equipo, el destino local se elige al descargar.
 

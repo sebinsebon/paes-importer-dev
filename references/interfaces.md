@@ -73,3 +73,15 @@ La verificación comienza con input.json de stage source-reading y reading-templ
 ## Medidas de proveedor
 
 `record-usage --run RUN --response uso.json` acepta `{run_id, events:[{event_id, usage_source, input_tokens, output_tokens, cost, currency, duration_seconds}]}`. usage_source identifica el recibo o medición real. Cada evento corresponde a una llamada, sin agregados superpuestos. Mantener null para medidas no expuestas; currency es obligatorio cuando cost está medido. El mismo event_id con datos idénticos es idempotente; datos diferentes con el mismo ID se rechazan. No duplicar llamadas de agentes en una suma del coordinador. Los totales incompletos permanecen null, con subtotales conocidos separados.
+
+## draft.json v1 del extractor previo
+
+Después de `prepare`, `map` y `route`, una ejecución puede incorporar una extracción v1 existente:
+
+~~~text
+python -B scripts/importer.py adapt-draft --run RUN --draft /ruta/draft.json
+~~~
+
+El adaptador exige un candidato mapeado todavía intacto y cubrir exactamente la selección congelada completa. Valida el draft y sus recursos, vincula por SHA-256 exacto y número de páginas de fuente, y por número original de pregunta. Comprueba toda la conversión antes de aplicar cambios: asociaciones ambiguas o estructuras sin conversión segura fallan atómicamente y explican el bloqueo. Conserva copia del draft, recursos y evidencia de procedencia en `.work`, fuera del paquete final. Los contextos compartidos representables se incorporan a cada pregunta que los referencia conservando su procedencia. Los gráficos conservan su `source_bbox` y origen superior izquierdo al asociarse con el recorte de fuente; no se invierte el eje vertical ni se inventa geometría.
+
+`complete` y `structural_fidelity.status=verified` son estados del extractor, no aprobación independiente. La conversión no los promueve a `reviewed` o `verified`. Respuestas, explicaciones y currículo no demostrados permanecen pendientes; el anfitrión debe completarlos mediante `ingest`, lectura registrada, cotejos y la auditoría que exija `route`. Conservar el draft interno no sustituye el `.paessed` 0.2.0 final.
