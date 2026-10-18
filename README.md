@@ -33,6 +33,8 @@ El anfitrión debe obtener el bundle completo y leer SKILL.md con sus referencia
 
 Pauta con letras: explicación breve generada por IA. Con justificación: reutilizar/resumir y registrar origen. Pauta parcial: resolver solo faltantes. Incompatible/ambigua: aclarar o continuar sin utilizarla. Validación estructural y autorrevisión no convierten respuestas en verified.
 
+Las explicaciones se entregan como texto y matemática editables; las imágenes conservan diagramas necesarios. Las nuevas ejecuciones registran un inventario observado de figuras/tablas/matemática antes de transcribir y generan una vista fuente/resultado mediante `review --run RUN`. El agente debe abrirla y cotejar cada pregunta y recorte antes de registrar los controles. Los hashes invalidan revisiones de contenido o imágenes modificados. Con pauta completa, los cotejos pendientes bloquean la publicación; los otros flujos conservan entregas parciales explícitas. Consulta la [operación común](references/workflow.md).
+
 ## Instalación
 
 Requisitos: **Python 3.12+ y Node.js 18+** (`node` disponible en PATH). Validadores JS y sus bibliotecas/licencias ya están incluidos; no necesita npm install. El instalador descarga las dependencias Python fijadas en requirements.txt; para instalación sin red, deben estar disponibles en el entorno o en un repositorio de paquetes configurado por el usuario.

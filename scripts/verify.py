@@ -416,6 +416,10 @@ def load_reports(folder):
         parent = Path(run['parent']['path'])
         validate_mapping(proposal, read(parent/'selection.json'))
         validate_geometry(proposal, read(parent/'catalog.json'))
+        from content_inventory import validate_inventory
+        mapped = {q['id']: q for q in read(parent/'selection.json')['expected_questions']}
+        for q in proposal['questions']:
+            validate_inventory(q, mapped[q['id']], proposal)
         reports.append((batch_id, report))
     audited = [q['id'] for _, report in reports for q in report['questions']]
     if len(audited) != len(set(audited)) or set(audited) != set(run['target_question_ids']):
@@ -554,6 +558,13 @@ def consolidate(folder, decision_file):
             elif issue['code'].startswith('COTEJO_') or issue['code'] == 'MAPPING_PENDING':
                 if final_quality['publication_eligibility'] != 'blocked': final_quality['publication_eligibility'] = 'partial'
     require_publishable(final_quality)
+    parent = Path(run['parent']['path'])
+    from content_inventory import validate_inventory
+    mapped = {q['id']: q for q in read(parent/'selection.json')['expected_questions']}
+    for q in final['questions']:
+        validate_inventory(q, mapped[q['id']], final)
+    if (parent/'route.json').exists() and read(parent/'route.json')['processing_mode'] == 'answer-key' and final_quality['publication_eligibility'] != 'complete':
+        raise ValueError('Complete answer-key import remains incomplete after independent review')
     final['run']['quality'] = final_quality
     # Compatible v1 container; experimental metadata is in extensible run, never schema changes.
     final['run'].update(id=run['id'], created_at=now(), verification_variant='direct-verified',

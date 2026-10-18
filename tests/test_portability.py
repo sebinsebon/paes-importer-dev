@@ -89,7 +89,18 @@ class PortabilityTests(unittest.TestCase):
                          '--session-id', 'synthetic-smoke-test',
                          '--destination', 'custom', '--output-root', workspace / 'output',
                          '--capabilities', capabilities, '--run-id', 'bundle-smoke-test')
-            self.assertTrue((Path(json.loads(result.stdout)['run']) / 'catalog.json').is_file())
+            folder = Path(json.loads(result.stdout)['run'])
+            self.assertTrue((folder/'catalog.json').is_file())
+            selection = workspace/'selection.json'
+            selection.write_text(json.dumps({'observed_question_count':2,'observation':'Fictional source map',
+                'expected_questions':[{'id':'q'+str(i),'source_id':'exam','number':str(i),'page':i,
+                    'option_labels':['A','B'],'content_inventory':[],
+                    'regions':[{'page':i,'bbox':[0,0,400,400]}]} for i in (1,2)]}),encoding='utf-8')
+            run(skill/'scripts/importer.py','map','--run',folder,'--selection',selection)
+            run(skill/'scripts/importer.py','route','--run',folder)
+            preview = json.loads(run(skill/'scripts/importer.py','review','--run',folder).stdout)
+            self.assertTrue(Path(preview['html']).is_file())
+            self.assertTrue((Path(preview['html']).parent/'vendor/katex/dist/katex.min.css').is_file())
 
     def test_entrypoint_routes_to_one_self_contained_flow(self):
         entrypoint = (ROOT / 'SKILL.md').read_text(encoding='utf-8')

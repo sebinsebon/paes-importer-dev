@@ -23,6 +23,8 @@ from direct_gate import validate_direct_input
 from output_policy import require_official_final
 from evidence import field_paths, validate_citations, validate_geometry, validate_mapping
 from quality import summarize, require_publishable
+from content_inventory import validate_inventory_record, validate_inventory
+import visual_review
 import pipeline as engine
 from policy import select_mode
 
@@ -119,7 +121,8 @@ def prepare(args):
     os.environ.update(TEMP=str(temporary), TMP=str(temporary), UV_CACHE_DIR=str(temporary / 'uv-cache'))
     config = {'host': args.host, 'model': args.model, 'effort': args.effort, 'batch_size': 5,
               'capabilities': capabilities, 'max_retries': 3,
-              'suggested_save_location': getattr(args, 'suggested_save_location', None)}
+              'suggested_save_location': getattr(args, 'suggested_save_location', None),
+              'visual_review_protocol': visual_review.PROTOCOL}
     run = {'id': rid, 'pipeline': 'pdf-direct', 'variant': 'direct', 'protocol_version': PROTOCOL,
            'purpose': 'portable-import', 'eligible': False, 'status': 'preparing',
            'cli': args.client or args.host, 'host': args.host, 'model': args.model,
@@ -182,6 +185,8 @@ def map_questions(folder, selection_file):
         if labels is not None and (not isinstance(labels, list) or len(labels) < 2 or
                 len(set(labels)) != len(labels) or any(not isinstance(x, str) or not re.fullmatch('[A-Z]', x) for x in labels)):
             raise ValueError('Observed option_labels must be distinct A..Z labels')
+        if visual_review.required(folder) and not q.get('mapping_pending'):
+            validate_inventory_record(q, read(folder/'catalog.json'))
         for region in q.get('regions', []):
             page = next((p for p in read(folder/'catalog.json')['pages'] if p['source_id'] == 'exam' and p['page'] == region.get('page')), None)
             if not page:
@@ -224,6 +229,12 @@ def validate_key(record, candidate):
         if (not source or type(item.get('page')) is not int or not 1 <= item['page'] <= source['page_count']
                 or not item.get('observation')):
             raise ValueError('Key correspondence needs source/page/observation')
+        if 'pages' in item:
+            pages = item['pages']
+            if (not isinstance(pages, list) or not pages or
+                    any(type(p) is not int or not 1 <= p <= source['page_count'] for p in pages) or
+                    len(set(pages)) != len(pages) or item['page'] not in pages):
+                raise ValueError('Key pages must include its primary page and valid distinct physical pages')
     for item in match['evidence']:
         cite(item)
     allowed = {q['id'] for q in candidate['questions']}
@@ -303,9 +314,11 @@ def ingest(folder, response_file):
         raise ValueError('Unknown explanation question')
     prepared = []
     rejected = []
+    mapping = {q['id']: q for q in read(folder/'selection.json')['expected_questions']}
     for raw_question in questions:
         q = copy.deepcopy(raw_question)
         try:
+            validate_inventory(q, mapping[q['id']], candidate)
             if q['id'] in key:
                 label = key[q['id']]['label']
                 if label not in {o['label'] for o in q['options']}:
@@ -405,11 +418,13 @@ def archive(folder, kind, record):
 
 def check_template(folder):
     candidate = read(folder / 'candidate.json')
+    previews = read(folder/'render-reviews.json') if (folder/'render-reviews.json').exists() else {}
     return {'run_id': candidate['run']['id'], 'independent': False,
             'session_id': read(folder / 'run.json')['session_id'],
             'protocol': 'source-cotejo-0.2',
             'questions': [{'id': q['id'], 'content_sha256': engine.content_hash(q, candidate, folder),
                            'solution_sha256': engine.solution_hash(q, candidate, folder),
+                           **({'render_review': previews.get(q['id'])} if visual_review.required(folder) else {}),
                            'checks': {k: {'status': 'unresolved', 'reason': '', 'field_paths': field_paths(q)[k], 'evidence': []} for k in CHECKS}}
                           for q in candidate['questions']]}
 
@@ -430,11 +445,14 @@ def check_record(folder, record, candidate):
     provenance = read(folder/'explanation-provenance.json') if (folder/'explanation-provenance.json').exists() else {}
     if candidate['schema_version'] == '0.2.0' and record.get('protocol') != 'source-cotejo-0.2':
         raise ValueError('Source cotejo 0.2 protocol required')
+    review_cache = {}
     for row in rows:
         q = by_id.get(row['id'])
         if (not q or row.get('content_sha256') != engine.content_hash(q, candidate, folder)
                 or row.get('solution_sha256') != engine.solution_hash(q, candidate, folder)):
             raise ValueError('Stale self-check question/solution')
+        if visual_review.required(folder):
+            visual_review.validate_review(folder, row.get('render_review'), q, candidate, review_cache)
         if set(row.get('checks', {})) != set(CHECKS):
             raise ValueError('Self-check needs all six dimensions')
         for dimension, check in row['checks'].items():
@@ -488,7 +506,9 @@ def validate_for_pack(folder):
     checks = read(folder / 'self-checks.json') if (folder / 'self-checks.json').exists() else {}
     curriculum_ledger = read(folder/'curriculum-ledger.json') if (folder/'curriculum-ledger.json').exists() else {}
     mapped = {q['id']:q for q in read(folder/'selection.json')['expected_questions']}
+    checked_reports = {}
     for q in candidate['questions']:
+        validate_inventory(q, mapped[q['id']], candidate)
         if candidate['schema_version'] == '0.2.0':
             from curriculum import curriculum_hash, prepare_ledger, validate_question_curriculum
             classified = validate_question_curriculum(q)
@@ -515,8 +535,12 @@ def validate_for_pack(folder):
         entry = checks.get(q['id'])
         if not entry:
             raise ValueError('Every question needs its own documented source cotejo')
-        archived = read(folder / 'reports/self-checks' / entry['report'])
-        bound = check_record(folder, archived, candidate)
+        if entry['report'] not in checked_reports:
+            archived = read(folder / 'reports/self-checks' / entry['report'])
+            active = [row for row in archived['questions']
+                      if checks.get(row['id'], {}).get('report') == entry['report']]
+            checked_reports[entry['report']] = check_record(folder, {**archived, 'questions': active}, candidate)
+        bound = checked_reports[entry['report']]
         if entry['row'] not in bound:
             raise ValueError('Self-check archive binding mismatch')
     result = summarize(candidate, checks)
@@ -524,8 +548,10 @@ def validate_for_pack(folder):
         if mapped[q['id']].get('mapping_pending'):
             result['issues'].append({'question_id':q['id'],'field':'options','code':'MAPPING_PENDING','severity':'warning'})
             if result['publication_eligibility'] != 'blocked': result['publication_eligibility'] = 'partial'
-    require_publishable(result)
     write(folder/'quality-report.json', result)
+    require_publishable(result)
+    if decision['processing_mode'] == 'answer-key' and result['publication_eligibility'] != 'complete':
+        raise ValueError('Complete answer-key import has pending source cotejos/content; repair before publication. Preserve the run as incomplete.')
     decision = {**decision, 'quality': result, 'validation': validation_result}
     return candidate, decision
 
@@ -652,7 +678,7 @@ def main():
     p.add_argument('action', choices=['prepare', 'check', 'decisions', 'consolidate', 'add-evidence', 'commit-reading'])
     p.add_argument('--run', required=True); p.add_argument('--session-id', default='unknown')
     p.add_argument('--decisions'); p.add_argument('--batch'); p.add_argument('--requests'); p.add_argument('--response')
-    for name in ('map', 'route', 'ingest', 'record-input', 'record-usage', 'batch-plan', 'check-template', 'record-check', 'crops',
+    for name in ('map', 'route', 'ingest', 'record-input', 'record-usage', 'batch-plan', 'review', 'check-template', 'record-check', 'crops',
                  'validate', 'pack', 'baseline', 'resume', 'fail'):
         p = sub.add_parser(name); p.add_argument('--run', required=True)
         if name == 'map': p.add_argument('--selection', required=True)
@@ -688,6 +714,11 @@ def main():
                 from batch_plan import plan_batches
                 result = plan_batches(read(folder/'candidate.json'),args.batch_size,args.max_characters)
             elif args.command == 'check-template': result = check_template(folder)
+            elif args.command == 'review':
+                with __import__('checkpoints').state_lock(folder):
+                    ensure_editable(folder)
+                    frozen_route(folder)
+                    result = visual_review.create_review(folder)
             elif args.command == 'record-check': result = record_check(folder, args.response)
             elif args.command == 'crops':
                 ensure_editable(folder)

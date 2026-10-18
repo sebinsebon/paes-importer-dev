@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0-portable",
+  "version": "1.3.0-portable",
   "protocol_version": "0.3.0",
   "files": [
     {
@@ -12,27 +12,31 @@
     },
     {
       "path": "README.md",
-      "sha256": "c96d26bb30af60dd55fad8e8c545efe6f740841cd93be1a71ea2e971739fdf00"
+      "sha256": "2c29c1c4e3f2f686fcb6a34ecb2ca9decb6bd9264bcc6b2f374b9ac4947fceb1"
     },
     {
       "path": "SKILL.md",
-      "sha256": "44be4d23f2e1c3bafe2c1d310f15fd74aaa305277aab37702de4b167e96e03f8"
+      "sha256": "961cbce24d5f9edf01090ea148141f1acf790655957dbff1cb40808d58c6409e"
     },
     {
       "path": "flows/01-chat-con-solucionario/WORKFLOW.md",
-      "sha256": "3168ff7f5eb3c8e3ab28ee2712ebe9939a0afda976f58d647e5aa0d45c81b056"
+      "sha256": "0857f7f4fcc90d390b5b4284a2a92db33cafcef4e6ffab568e93a4c1ae863e2a"
     },
     {
       "path": "flows/02-cli-con-solucionario/WORKFLOW.md",
-      "sha256": "4017f5266eb1408d64991e2f79fc8fb338a257a4c9ca9144b091fa7bd1a1c92d"
+      "sha256": "1f3d699977854f88bae90ac69eea421c049bd9ca21e7b08202a93c1b66f3f22a"
     },
     {
       "path": "flows/03-cli-sin-solucionario/WORKFLOW.md",
-      "sha256": "ccaa1bf0b38413a84a6b16bf799c3d204a4e3f30700575ca1a46b3010dc8e2d7"
+      "sha256": "0b9fa732cdf31386d91813d97d3e26641316f0191bd298cc83293c60ba3c4087"
     },
     {
       "path": "flows/04-chat-sin-solucionario/WORKFLOW.md",
-      "sha256": "e4228a231470c7d8d1b2182e7a40e6d3db20d08daebe676be2acf398a7c81a91"
+      "sha256": "db68ec44283252574081ffe5c2e5927b6f49e7660fa59153e00d826d1cb2a2ca"
+    },
+    {
+      "path": "references/advanced.md",
+      "sha256": "74234a152b540007bcc09ffce273faee2c85f85dc0c30bbcae102fd75b8ff5ad"
     },
     {
       "path": "references/audit.md",
@@ -44,11 +48,15 @@
     },
     {
       "path": "references/interfaces.md",
-      "sha256": "4e4838341bfe7542a66306a0689580314116bcd6772deb41b12f26b5d9ad5ada"
+      "sha256": "ad7d151cf531fbf8c5efd454c34a285dda706ab503f3fc051af380f23a0bf056"
+    },
+    {
+      "path": "references/representation.md",
+      "sha256": "5ea25b14c75f5baaa23b38f813ecf22bf9b1db8643a0369b38da0969eb08e93a"
     },
     {
       "path": "references/workflow.md",
-      "sha256": "52552845401142777c3d92b210914e20835fe3020e98790fc546fe14106518f1"
+      "sha256": "769daf51bdefdb498d7aa49e40197ca835c8acb8790d9492d40de7932b63fe84"
     },
     {
       "path": "requirements.txt",
@@ -60,7 +68,7 @@
     },
     {
       "path": "scripts/importer.py",
-      "sha256": "1846e18357e5ccea0caf79a7f7f5a3eccaf0b8678f335cd5e8c0257583a870ae"
+      "sha256": "d044be729124b6104fc1e3c44927ec44ba453e64ea33cbc46c8c9b6dcb1956c2"
     },
     {
       "path": "scripts/make_bundle.py",
@@ -72,7 +80,7 @@
     },
     {
       "path": "scripts/release.py",
-      "sha256": "3e7cb6bee5684000271dd1c9690c08e7a07de21f4d56c76689dff3c911507b54"
+      "sha256": "16fb3d9beb9c4d01c20389112216a95aa746c4ad1b2ceb6bba074610c76dc027"
     },
     {
       "path": "scripts/setup.py",
@@ -80,7 +88,7 @@
     },
     {
       "path": "scripts/verify.py",
-      "sha256": "d207917fa30b7ddbe251fba93a98e81c1bdd25942d8ed9a931d7ee05c02d2efd"
+      "sha256": "c31ee7df2a2941c35cd21da6187e0686a29968877405c508e4c05f44c8a45268"
     },
     {
       "path": "scripts/write_json.ps1",
@@ -139,6 +147,10 @@
       "sha256": "45bc5a509f88814ff4a6e7bf8b8bdd3e702c6f862eb85dfb6cf5a2db179932ab"
     },
     {
+      "path": "shared/scripts/content_inventory.py",
+      "sha256": "67ab82ff8867d15496609a727f996c9b8bc50a52227efabc233c251aa28dfb2e"
+    },
+    {
       "path": "shared/scripts/curriculum.py",
       "sha256": "e1ee238a8f26fafb26646b728860fd8eee1fd8fc38de62d075f7d6cedf48bd5e"
     },
@@ -172,7 +184,7 @@
     },
     {
       "path": "shared/scripts/evidence.py",
-      "sha256": "9beb835952ff7dd07755d2eb2384180a8a0646f435e6667198d877556c0b601e"
+      "sha256": "5848da3a8b143c3f898d9bdcb7ff56eebe75ba51b3fb4d9663519276280aaea9"
     },
     {
       "path": "shared/scripts/lab.py",
@@ -201,6 +213,14 @@
     {
       "path": "shared/scripts/quality.py",
       "sha256": "a74ed067ee542bfe50c7ddf9d77d087c88b95f7434d1900b453f20acdbfe99c2"
+    },
+    {
+      "path": "shared/scripts/source_review.py",
+      "sha256": "0a8b6d2b38705beec11c94dbae47b22f805d1d9f5e26def8111124e2c4fe28d8"
+    },
+    {
+      "path": "shared/scripts/visual_review.py",
+      "sha256": "475f08d0276321bb47305192f87ce5ab3b099d1d4bddfcdeb2aa6545e3ef89a3"
     },
     {
       "path": "viewer/block-renderer.css",

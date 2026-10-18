@@ -53,7 +53,7 @@ class ImporterTests(unittest.TestCase):
         path = self.home / name
         configure_workspace(self.home); write(path, record)
         return path
-    def start(self, host='cli', solution=True, runid='run-01'):
+    def start(self, host='cli', solution=True, runid='run-01', inventory_types=('math','table')):
         args = argparse.Namespace(exam=str(self.exam), solution=str(self.solution) if solution else None,
             title='Synthetic M1', run_id=runid, destination='custom', output_root=str(self.home / 'output'),
             host=host, client='synthetic-test', model='synthetic', effort='synthetic',
@@ -62,6 +62,9 @@ class ImporterTests(unittest.TestCase):
         selection = {'title': 'Synthetic M1', 'observed_question_count': 2,
             'observation': 'Fictional two-question fixture',
             'expected_questions': [{'id': f'q{i}', 'number': str(i), 'source_id': 'exam', 'page': i, 'option_labels':['A','B'], 'regions':([{'page':1,'bbox':[0,300,400,400]}] if i == 2 else []) + [{'page':i,'bbox':[0,0,400,400]}]} for i in (1,2)]}
+        for q in selection['expected_questions']:
+            q['content_inventory'] = [{'field':'stem','type':kind,'count':1,
+                'regions':[{'page':q['page'],'bbox':[0,0,400,400]}]} for kind in inventory_types]
         sf = self.fixture_file('selection.json', selection)
         configure_workspace(folder.parent.parent); app.map_questions(folder, sf)
         return folder
@@ -116,6 +119,7 @@ class ImporterTests(unittest.TestCase):
         configure_workspace(folder.parent.parent);app.record_input(folder,lf)
         self.cotejo()
     def cotejo(self):
+        app.visual_review.create_review(self.folder)
         record=app.check_template(self.folder); candidate=read(self.folder/'candidate.json')
         for row in record['questions']:
             resource=next(e for e in candidate['evidence'] if e['source_id']=='exam' and e['page']==int(next(q['number'] for q in candidate['questions'] if q['id']==row['id'])))

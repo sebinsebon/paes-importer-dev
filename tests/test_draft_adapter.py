@@ -28,7 +28,7 @@ class DraftAdapterTests(unittest.TestCase):
     cotejo = fixtures.ImporterTests.cotejo
 
     def draft(self):
-        folder = self.start(solution=False)
+        folder = self.start(solution=False, inventory_types=('math',))
         self.route()
         catalog = read(folder / 'catalog.json')
         candidate = read(folder / 'candidate.json')

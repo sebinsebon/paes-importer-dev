@@ -46,7 +46,10 @@ def validate_citations(question, dimension, check, candidate, root, selection=No
     source_entry = key if dimension == 'answer' else provenance if dimension == 'explanation' else None
     if source_entry and source_entry.get('source_id'):
         source = source_entry['source_id']
-        regions = [{'page': source_entry['page'], 'bbox': None}]
+        pages = source_entry.get('pages', [source_entry['page']])
+        if dimension == 'explanation' and key and key['source_id'] == source:
+            pages = key.get('pages', pages)
+        regions = [{'page': page, 'bbox': None} for page in pages]
     for citation in refs:
         resource = resources.get(citation.get('id'))
         if (not resource or resource['sha256'] != citation.get('sha256') or
