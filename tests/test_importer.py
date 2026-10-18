@@ -11,9 +11,9 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-ROOT = Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT / 'scripts'))
-sys.path.insert(0, str(ROOT / 'examples'))
+sys.path.insert(0, str(DEV_ROOT/'examples'))
 import importer as app
 import verify
 import synthetic
@@ -41,13 +41,13 @@ class PolicyTests(unittest.TestCase):
 
 class ImporterTests(unittest.TestCase):
     def setUp(self):
-        (ROOT / 'tmp').mkdir(exist_ok=True)
-        self.temporary = tempfile.TemporaryDirectory(dir=ROOT / 'tmp')
+        (WORK_ROOT).mkdir(exist_ok=True)
+        self.temporary = tempfile.TemporaryDirectory(dir=WORK_ROOT)
         self.home = Path(self.temporary.name)
         self.exam, self.solution = synthetic.create(self.home / 'sources')
         configure_workspace(self.home)
         self.cap = self.home / 'cap.json'
-        write(self.cap, {**{k: True for k in app.CAPABILITIES}, 'observation': 'Synthetic fixture machinery; no real AI capability claim'})
+        write(self.cap, {**{k: True for k in app.CAPABILITIES}, 'observation': 'Synthetic fixture machinery; no real AI capability claim', 'result_visual':{'mode':'html','tool':'synthetic fixture','observation':'Synthetic renderer binding, not real comprehension'}})
     def tearDown(self): self.temporary.cleanup()
     def fixture_file(self, name, record):
         path = self.home / name
@@ -65,6 +65,10 @@ class ImporterTests(unittest.TestCase):
         for q in selection['expected_questions']:
             q['content_inventory'] = [{'field':'stem','type':kind,'count':1,
                 'regions':[{'page':q['page'],'bbox':[0,0,400,400]}]} for kind in inventory_types]
+        for q in selection['expected_questions']:
+            q['source_fields'] = {'stem':copy.deepcopy(q['regions']), **{'options/'+label:[{'page':q['page'],'bbox':[0,0,400,400]}] for label in q['option_labels']}}
+            for item in q['content_inventory']:
+                if item['type']=='table': item['shape']={'rows':1,'columns':2}
         sf = self.fixture_file('selection.json', selection)
         configure_workspace(folder.parent.parent); app.map_questions(folder, sf)
         return folder
@@ -75,7 +79,7 @@ class ImporterTests(unittest.TestCase):
             'match': {'status': status, 'reason': 'Synthetic source identities match',
                 'evidence': [{'source_id': source, 'page': 1, 'observation': 'Fictional matching title'}]},
             'entries': [{'question_id': qid, 'label': 'B', 'source_id': source, 'page': 1,
-                         'observation': 'Fictional key gives B', 'has_explanation': explanations} for qid in covered]}
+                         'observation': 'Fictional key gives B', 'has_explanation': explanations, **({'content_inventory':[{'field':'explanation','type':'math','count':1,'source_id':source,'regions':[{'page':1,'bbox':[0,0,400,400]}]}]} if explanations else {})} for qid in covered]}
     def route(self, covered=None, host='cli', subagents=False, consent=None):
         keyfile = self.fixture_file('key.json', self.key(covered)) if covered is not None else None
         configure_workspace(self.folder.parent.parent)
@@ -119,20 +123,24 @@ class ImporterTests(unittest.TestCase):
         configure_workspace(folder.parent.parent);app.record_input(folder,lf)
         self.cotejo()
     def cotejo(self):
+        from evidence import citation_requirements
         app.visual_review.create_review(self.folder)
         record=app.check_template(self.folder); candidate=read(self.folder/'candidate.json')
+        selection={q['id']:q for q in read(self.folder/'selection.json')['expected_questions']}
+        keys={e['question_id']:e for e in read(self.folder/'answer-key-map.json')['entries']} if (self.folder/'answer-key-map.json').exists() else {}
+        provenance=read(self.folder/'explanation-provenance.json')
         for row in record['questions']:
-            resource=next(e for e in candidate['evidence'] if e['source_id']=='exam' and e['page']==int(next(q['number'] for q in candidate['questions'] if q['id']==row['id'])))
-            for dimension, check in row['checks'].items():
-                if dimension == 'answer' and (self.folder/'answer-key-map.json').exists():
-                    entry = next((e for e in read(self.folder/'answer-key-map.json')['entries'] if e['question_id'] == row['id']), None)
-                    if entry:
-                        resource = next(e for e in candidate['evidence'] if e['source_id'] == entry['source_id'] and e['page'] == entry['page'])
-                elif dimension == 'explanation' and read(self.folder/'explanation-provenance.json').get(row['id'], {}).get('origin') == 'solution':
-                    resource = next(e for e in candidate['evidence'] if e['source_id'] == 'solution' and e['page'] == 1)
-                else:
-                    resource = next(e for e in candidate['evidence'] if e['source_id'] == 'exam' and e['page'] == int(next(q['number'] for q in candidate['questions'] if q['id'] == row['id'])))
-                check.update(status='pass',reason='Synthetic assertion only', evidence=[{'id':resource['id'],'sha256':resource['sha256'],'observation':'Fictional page','fields':check['field_paths']}])
+            question=next(q for q in candidate['questions'] if q['id']==row['id'])
+            row['visual_observation']={'mode':'html','tool':'synthetic fixture','observation':'Synthetic assertion only; not a real visual inspection'}
+            for dimension,check in row['checks'].items():
+                citations={}
+                for field in check['field_paths']:
+                    sid,regions=citation_requirements(question,dimension,field,selection[row['id']],keys.get(row['id']),provenance.get(row['id']))
+                    for region in regions:
+                        resource=next(e for e in candidate['evidence'] if e['source_id']==sid and e['page']==region['page'])
+                        cite=citations.setdefault(resource['id'],{'id':resource['id'],'sha256':resource['sha256'],'observation':'Fictional source evidence','fields':[]})
+                        if field not in cite['fields']:cite['fields'].append(field)
+                check.update(status='pass',reason='Synthetic assertion only',evidence=list(citations.values()))
         f=self.fixture_file('check.json',record)
         configure_workspace(self.folder.parent.parent);app.record_check(self.folder,f)
     def commit_blind(self, vf):
@@ -164,8 +172,18 @@ class ImporterTests(unittest.TestCase):
             batch=vf/'batches'/bid; packet=read(batch/'input.json'); report=read(batch/'report-template.json')
             report['reviewer'].update(id='fixture-reviewer',session_id=bid+'-synthetic-session',model='synthetic',effort='synthetic',fresh_context=True)
             for row in report['questions']:
-                ev=next(e for e in packet['evidence'] if e['source_id']=='exam' and e['page']==int(next(q['number'] for q in packet['questions'] if q['id']==row['id']))); evidence=[{'path':ev['path'],'sha256':ev['sha256'],'observation':'Synthetic test assertion only'}]
-                for check in row['checks'].values():check.update(status='pass',reason='Synthetic pass',evidence=evidence)
+                question=next(q for q in packet['questions'] if q['id']==row['id'])
+                exam_pages={r['page'] for r in question['regions']}
+                exam_refs=[{'path':e['path'],'sha256':e['sha256'],'observation':'Synthetic test assertion only'} for e in packet['evidence'] if e['source_id']==question['source_id'] and e['page'] in exam_pages]
+                for dimension,check in row['checks'].items():
+                    required=packet.get('source_requirements',{}).get(row['id'],{}).get(dimension,[])
+                    refs=exam_refs
+                    if required:
+                        refs=[{'path':e['path'],'sha256':e['sha256'],'observation':'Synthetic own-source assertion'} for e in packet['evidence'] if any(e['source_id']==r['source_id'] and e['page']==r['page'] for r in required)]
+                    if dimension=='options':refs=[r for r in exam_refs if next(e for e in packet['evidence'] if e['path']==r['path'])['page']==int(question['number'])]
+                    if dimension=='consistency':refs=list({r['path']:r for r in exam_refs+[{'path':e['path'],'sha256':e['sha256'],'observation':'Synthetic own-source assertion'} for e in packet['evidence'] if any(e['source_id']==r['source_id'] and e['page']==r['page'] for values in packet.get('source_requirements',{}).get(row['id'],{}).values() for r in values)]}.values())
+                    check.update(status='pass',reason='Synthetic pass',evidence=refs)
+                evidence=exam_refs
                 row['post_checks']={k:'pass' for k in app.CHECKS}
                 row['independent_solution']={'label':'B','reasoning':'Fictional arithmetic fixture','evidence':evidence}
             write(batch/'report.json',report)

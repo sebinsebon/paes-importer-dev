@@ -7,7 +7,7 @@ from pathlib import Path
 from compare_gold import compare
 from gold import load_reference, sha
 from maintenance_io import write_report
-ROOT = Path(__file__).resolve().parents[1]
+from dev_paths import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT / 'shared/scripts'))
 from metrics import aggregate_usage, measured_savings
 

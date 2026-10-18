@@ -39,10 +39,12 @@ class DraftAdapterTests(unittest.TestCase):
                  for p in catalog['pages'] if p['source_id'] == 'exam']
         regions = [{'id': 'r' + str(i), 'page_id': 'p' + str(i), 'bbox': [0,0,400,400],
                     'kind': 'question', 'transform': [1,0,0,1,0,0]} for i in (1,2)]
+        regions.append({'id':'r2-shared','page_id':'p1','bbox':[0,300,400,400],
+                        'kind':'context','transform':[1,0,0,1,0,0]})
         questions = []
         for i in (1,2):
             questions.append({'id': 'legacy-' + str(i), 'original_number': str(i),
-                              'region_ids': ['r' + str(i)], 'context_ids': [],
+                              'region_ids': (['r2-shared'] if i == 2 else []) + ['r' + str(i)], 'context_ids': [],
                               'stem': [{'type':'text','text':'Synthetic sum ', 'source_ids': []},
                                        {'type':'math','latex':'2+2','display':False,'source_ids':[]}],
                               'options':[{'id':f'o{i}{label}', 'label':label, 'owner':f'option:o{i}{label}', 'source_ids':[],
@@ -212,7 +214,7 @@ class DraftAdapterTests(unittest.TestCase):
         bundle = self.home/'portable.zip'
         env = {**os.environ, 'PYTHONDONTWRITEBYTECODE':'1', 'PYTHONUTF8':'1'}
         env.pop('PYTHONPATH', None)
-        result = subprocess.run([sys.executable,'-B',str(fixtures.ROOT/'scripts/make_bundle.py'),'--output',str(bundle)],
+        result = subprocess.run([sys.executable,'-B',str(fixtures.DEV_ROOT/'scripts/make_bundle.py'),'--output',str(bundle)],
                                 capture_output=True,text=True,encoding='utf-8',env=env,timeout=60)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         extracted = self.home/'instalación con espacios'

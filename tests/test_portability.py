@@ -11,7 +11,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 FLOW_FILES = (
     'flows/01-chat-con-solucionario/WORKFLOW.md',
     'flows/02-cli-con-solucionario/WORKFLOW.md',
@@ -22,8 +22,8 @@ FLOW_FILES = (
 
 class PortabilityTests(unittest.TestCase):
     def test_bundle_runs_from_unrelated_directory(self):
-        (ROOT / 'tmp').mkdir(exist_ok=True)
-        with tempfile.TemporaryDirectory(dir=ROOT / 'tmp') as temporary:
+        (WORK_ROOT).mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=WORK_ROOT) as temporary:
             workspace = Path(temporary)
             caller = workspace / 'caller'
             caller.mkdir()
@@ -39,7 +39,7 @@ class PortabilityTests(unittest.TestCase):
                 return result
 
             bundle = workspace / 'skill.zip'
-            run(ROOT / 'scripts/make_bundle.py', '--output', bundle)
+            run(DEV_ROOT/'scripts/make_bundle.py', '--output', bundle)
             extracted = workspace / 'instalación con espacios'
             manifest = json.loads((ROOT / 'release.json').read_text(encoding='utf-8'))
             with zipfile.ZipFile(bundle) as archive:
@@ -50,7 +50,7 @@ class PortabilityTests(unittest.TestCase):
             skill = extracted / 'paes-importer'
             self.assertFalse((skill / '.git').exists())
             self.assertFalse((skill / '.venv').exists())
-            run(skill / 'scripts/release.py')
+            run(skill / 'scripts/check_release.py')
             run(skill / 'scripts/importer.py', '--help')
             # The distributed skill includes no development inputs.
             forbidden = {'tests', 'examples', 'docs', 'development', '.github',
@@ -75,12 +75,12 @@ class PortabilityTests(unittest.TestCase):
             run(skill / 'scripts/verify.py', '--help')
             # Smoke test: create a synthetic PDF outside the bundle and prepare it.
             sources = workspace / 'sources'
-            run(ROOT / 'examples/synthetic.py', '--output', sources)
+            run(DEV_ROOT/'examples/synthetic.py', '--output', sources)
             capabilities = workspace / 'capabilities.json'
             capabilities.write_text(json.dumps({
                 'pdf_visual': True, 'crop': True, 'execute': True,
                 'zip': True, 'validate': True,
-                'observation': 'Synthetic fixtures only, not an AI reading claim'
+                'observation': 'Synthetic fixtures only, not an AI reading claim', 'result_visual':{'mode':'html','tool':'synthetic','observation':'Synthetic capability only'}
             }), encoding='utf-8')
             result = run(skill / 'scripts/importer.py', 'prepare',
                          '--exam', sources / 'synthetic-m1.pdf',
@@ -94,7 +94,7 @@ class PortabilityTests(unittest.TestCase):
             selection = workspace/'selection.json'
             selection.write_text(json.dumps({'observed_question_count':2,'observation':'Fictional source map',
                 'expected_questions':[{'id':'q'+str(i),'source_id':'exam','number':str(i),'page':i,
-                    'option_labels':['A','B'],'content_inventory':[],
+                    'option_labels':['A','B'],'content_inventory':[], 'source_fields':{f:[{'page':i,'bbox':[0,0,400,400]}] for f in ('stem','options/A','options/B')},
                     'regions':[{'page':i,'bbox':[0,0,400,400]}]} for i in (1,2)]}),encoding='utf-8')
             run(skill/'scripts/importer.py','map','--run',folder,'--selection',selection)
             run(skill/'scripts/importer.py','route','--run',folder)

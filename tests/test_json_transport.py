@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 
 class TransportTests(unittest.TestCase):
     def setUp(self):
@@ -24,15 +24,15 @@ class TransportTests(unittest.TestCase):
                     break
             except OSError:continue
         if not self.shell:self.skipTest('PowerShell unavailable or non-executable alias')
-        (ROOT/'tmp').mkdir(exist_ok=True)
-        self.temp=tempfile.TemporaryDirectory(dir=ROOT/'tmp')
+        (WORK_ROOT).mkdir(exist_ok=True)
+        self.temp=tempfile.TemporaryDirectory(dir=WORK_ROOT)
         self.home=Path(self.temp.name)
     def tearDown(self):
         if hasattr(self,'temp'):self.temp.cleanup()
     def invoke(self,source,target,launcher=False,workspace=None,script_override=None):
         script=script_override or (ROOT/'run.ps1' if launcher else ROOT/'scripts/write_json.ps1')
         args=['-JsonInputPath',str(source),'-JsonOutputPath',str(target)] if launcher else ['-InputPath',str(source),'-OutputPath',str(target)]
-        if workspace is not None:args.extend(['-WorkspaceRoot',str(workspace)])
+        args.extend(['-WorkspaceRoot',str(workspace if workspace is not None else self.home)])
         return subprocess.run([self.shell,'-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',str(script),*args],
                               capture_output=True,encoding='utf-8',errors='replace')
     def test_content_is_never_shell_source(self):

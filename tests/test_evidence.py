@@ -4,7 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-ROOT = Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT/'shared/scripts'))
 from lab import configure_workspace
 from evidence import field_paths, validate_citations, validate_geometry
@@ -12,7 +12,7 @@ from quality import summarize, require_publishable
 
 class EvidenceTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory(dir=ROOT/'tmp')
+        self.tmp = tempfile.TemporaryDirectory(dir=WORK_ROOT)
         self.root = Path(self.tmp.name)
         configure_workspace(self.root)
         (self.root/'evidence').mkdir()

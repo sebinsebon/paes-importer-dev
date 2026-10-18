@@ -6,9 +6,9 @@ from pathlib import Path
 from PIL import Image, ImageChops
 import pypdfium2 as pdfium
 
-ROOT = Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT/'shared/scripts'))
-sys.path.insert(0, str(ROOT/'examples'))
+sys.path.insert(0, str(DEV_ROOT/'examples'))
 from lab import configure_workspace
 from pdf_assets import render_crop
 import synthetic
@@ -16,8 +16,8 @@ import synthetic
 
 class CropGeometryTests(unittest.TestCase):
     def test_visible_crop_matches_full_page_pixels_at_every_rotation(self):
-        (ROOT/'tmp').mkdir(exist_ok=True)
-        with tempfile.TemporaryDirectory(dir=ROOT/'tmp') as temporary:
+        (WORK_ROOT).mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=WORK_ROOT) as temporary:
             home = Path(temporary)
             configure_workspace(home)
             source = home/'fictional.pdf'

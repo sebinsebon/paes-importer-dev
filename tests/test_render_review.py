@@ -6,16 +6,16 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0,str(ROOT/'scripts'))
-sys.path.insert(0,str(ROOT/'examples'))
+sys.path.insert(0,str(DEV_ROOT/'examples'))
 import synthetic
 from render_review import build_review
 
 class RenderReviewTests(unittest.TestCase):
     def setUp(self):
-        (ROOT/'tmp').mkdir(exist_ok=True)
-        self.temp=tempfile.TemporaryDirectory(dir=ROOT/'tmp')
+        (WORK_ROOT).mkdir(exist_ok=True)
+        self.temp=tempfile.TemporaryDirectory(dir=WORK_ROOT)
         self.home=Path(self.temp.name)
         self.exam,_=synthetic.create(self.home/'sources')
         source={'id':'exam','name':'fictional.pdf','sha256':hashlib.sha256(self.exam.read_bytes()).hexdigest(),'page_count':2,'role':'exam'}
@@ -37,7 +37,7 @@ class RenderReviewTests(unittest.TestCase):
     def test_shared_page_rendered_once_and_content_safe(self):
         output=self.home/'review'
         before=self.exam.read_bytes()
-        result=build_review(self.candidate,{'exam':self.exam},output,scale=.5)
+        result=build_review(self.candidate,{'exam':self.exam},output,scale=.5,workspace=self.home)
         self.assertEqual(result['pages_rendered'],1)
         self.assertEqual(self.exam.read_bytes(),before)
         self.assertEqual(result['certification'],'not_performed')
@@ -52,19 +52,19 @@ class RenderReviewTests(unittest.TestCase):
         self.assertFalse(list(output.glob('*.pdf')))
     def test_wrong_source_hash_or_missing_source_writes_nothing(self):
         output=self.home/'invalid'
-        with self.assertRaises(ValueError):build_review(self.candidate,{},output)
+        with self.assertRaises(ValueError):build_review(self.candidate,{},output,workspace=self.home)
         self.assertFalse(output.exists())
         self.exam.write_bytes(self.exam.read_bytes()+b'changed')
-        with self.assertRaisesRegex(ValueError,'hash mismatch'):build_review(self.candidate,{'exam':self.exam},output)
+        with self.assertRaisesRegex(ValueError,'hash mismatch'):build_review(self.candidate,{'exam':self.exam},output,workspace=self.home)
         self.assertFalse(output.exists())
     def test_bad_geometry_rejected_before_write(self):
         self.data['questions'][0]['regions'][0]['bbox']=[0,0,500,500]
         self.candidate.write_text(json.dumps(self.data))
         output=self.home/'bad-geometry'
-        with self.assertRaises(ValueError):build_review(self.candidate,{'exam':self.exam},output)
+        with self.assertRaises(ValueError):build_review(self.candidate,{'exam':self.exam},output,workspace=self.home)
         self.assertFalse(output.exists())
     def test_output_cannot_escape_or_overwrite(self):
-        with self.assertRaises(ValueError):build_review(self.candidate,{'exam':self.exam},self.home)
+        with self.assertRaises(ValueError):build_review(self.candidate,{'exam':self.exam},self.home,workspace=self.home)
         with self.assertRaises(ValueError):build_review(self.candidate,{'exam':self.exam},ROOT/'development/private-review')
 
 if __name__=='__main__':unittest.main()

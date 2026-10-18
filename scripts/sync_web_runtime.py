@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 import shutil
 
-ROOT = Path(__file__).resolve().parents[1]
+from dev_paths import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 
 def sync(target, replace=False):
     target = Path(target).resolve(strict=True)

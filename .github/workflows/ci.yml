@@ -1,0 +1,58 @@
+name: Development against pinned runtime
+on:
+  workflow_dispatch:
+    inputs:
+      runtime_commit:
+        description: Full runtime SHA paired with these development tools; required before publication
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.12', '3.14']
+        node: ['22']
+        include:
+          - os: ubuntu-latest
+            python: '3.12'
+            node: '18'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: development
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ matrix.node }}
+      - id: runtime
+        name: Resolve immutable runtime reference
+        shell: bash
+        env:
+          REQUESTED_RUNTIME: ${{ inputs.runtime_commit }}
+        run: |
+          python -c "import os,re; ref=os.environ['REQUESTED_RUNTIME']; assert re.fullmatch('[0-9a-f]{40}',ref), 'A full candidate commit SHA is required'; open(os.environ['GITHUB_OUTPUT'],'a').write('ref='+ref+'\n')"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: sebinsebon/paes-importer-skill
+          ref: ${{ steps.runtime.outputs.ref }}
+          path: runtime
+          persist-credentials: false
+      - name: Install minimal dependencies
+        shell: bash
+        run: python -B development/scripts/setup_dev.py --runtime runtime
+      - name: Verify selected runtime
+        shell: bash
+        run: |
+          if [ -x development/.venv/bin/python ]; then
+            development/.venv/bin/python -B development/scripts/check.py --runtime runtime --report development/results/ci.json
+          else
+            development/.venv/Scripts/python.exe -B development/scripts/check.py --runtime runtime --report development/results/ci.json
+          fi

@@ -26,4 +26,19 @@ class RuntimeUsageTests(unittest.TestCase):
         self.assertEqual(decision['independent_question_ids'],['q1'])
         self.assertEqual(decision['solve_question_ids'],[])
 
+    def test_independent_publication_keeps_unknown_scopes_separate(self):
+        folder=self.fixture.folder
+        configure_workspace(folder.parent.parent)
+        write(folder/'usage-events.json',[{'event_id':'production','input_tokens':10,'output_tokens':5,
+             'cost':0.1,'currency':'USD','duration_seconds':2}])
+        write(folder.parent/'verification/metrics.json',{'verification_usage':{
+            'input_tokens':4,'output_tokens':None,'total_tokens':None,'cost_usd':0.2,'duration_seconds':3}})
+        scopes=importer.publication_usage(folder,True)
+        self.assertEqual(scopes['production']['total_tokens'],15)
+        self.assertEqual(scopes['production']['scope'],'production_only')
+        self.assertEqual(scopes['combined']['input_tokens'],14)
+        self.assertAlmostEqual(scopes['combined']['cost_usd'],0.3)
+        self.assertIsNone(scopes['combined']['total_tokens'])
+        self.assertIsNone(scopes['combined']['output_tokens'])
+
 if __name__ == '__main__':unittest.main()

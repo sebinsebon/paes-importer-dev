@@ -69,6 +69,7 @@ class VisualReviewTests(unittest.TestCase):
         refreshed = app.check_template(self.folder)
         row = refreshed['questions'][0]
         row['checks'] = copy.deepcopy(original['questions'][0]['checks'])
+        row['visual_observation'] = copy.deepcopy(original['questions'][0]['visual_observation'])
         refreshed['questions'] = [row]
         request = self.fixture.fixture_file('changed-cotejo.json', refreshed)
         configure_workspace(self.folder.parent.parent)
@@ -130,8 +131,16 @@ class MultiPageSolutionTests(unittest.TestCase):
             candidate = read(folder/'candidate.json')
             resource = next(e for e in candidate['evidence'] if e['source_id']=='solution' and e['page']==2)
             for dimension in ('answer','explanation'):
-                cite = cotejo['questions'][0]['checks'][dimension]['evidence'][0]
-                cite.update(id=resource['id'], sha256=resource['sha256'])
+                cites = cotejo['questions'][0]['checks'][dimension]['evidence']
+                self.assertTrue(any(c['id']==resource['id'] for c in cites))
+            # A lone continuation page cannot approve the two-page source.
+            incomplete = copy.deepcopy(cotejo)
+            incomplete['questions'][0]['checks']['answer']['evidence'] = [
+                c for c in incomplete['questions'][0]['checks']['answer']['evidence'] if c['id']==resource['id']]
+            missing = fixture.fixture_file('missing-key-page.json', incomplete)
+            configure_workspace(folder.parent.parent)
+            with self.assertRaisesRegex(ValueError,'every essential field region/page'):
+                app.record_check(folder, missing)
             request = fixture.fixture_file('multipage-cotejo.json', cotejo)
             configure_workspace(folder.parent.parent)
             app.record_check(folder, request)

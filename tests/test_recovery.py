@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-ROOT=Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0,str(ROOT/'shared/scripts'))
 import pipeline
 import checkpoints
@@ -14,8 +14,8 @@ from lab import configure_workspace,read,write
 
 class RecoveryTests(unittest.TestCase):
     def setUp(self):
-        (ROOT/'tmp').mkdir(exist_ok=True)
-        self.temp=tempfile.TemporaryDirectory(dir=ROOT/'tmp');self.folder=Path(self.temp.name)
+        (WORK_ROOT).mkdir(exist_ok=True)
+        self.temp=tempfile.TemporaryDirectory(dir=WORK_ROOT);self.folder=Path(self.temp.name)
         configure_workspace(self.folder)
         expected=[{'id':'q'+str(i),'source_id':'source','number':str(i)} for i in (1,2)]
         self.data={'format':'paessed-benchmark','schema_version':'0.2.0','pipeline':'demo',

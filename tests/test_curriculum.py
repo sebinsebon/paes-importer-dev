@@ -5,7 +5,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0,str(ROOT/'shared/scripts'))
 from curriculum import catalog, catalog_hash, curriculum_hash, pending_curriculum, validate_question_curriculum, prepare_ledger
 from jsonschema import Draft202012Validator

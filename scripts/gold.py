@@ -6,7 +6,7 @@ import json
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath
-ROOT = Path(__file__).resolve().parents[1]
+from dev_paths import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT / 'shared/scripts'))
 
 def sha(blob):
@@ -103,7 +103,7 @@ def inventory(package, taxonomy=None, sources=()):
 
 def safe_output(output):
     output = Path(output).absolute()
-    boundary = (ROOT / 'tmp').resolve()
+    boundary = WORK_ROOT.resolve()
     resolved = output.resolve()
     if resolved == boundary or boundary not in resolved.parents:
         raise ValueError('Gold outputs must be a fresh directory within this checkout tmp/')

@@ -1,0 +1,87 @@
+{
+  "format": "paessed-contract-sync",
+  "version": "0.2.0",
+  "container_version": "0.1.0",
+  "files": [
+    {
+      "path": "shared/references/content-contract.md",
+      "sha256": "52c4cb9a7aedc87507a40769d070cd88cbcf439119b715a2bac00729147a80aa"
+    },
+    {
+      "path": "shared/references/package-contract.md",
+      "sha256": "f0cd1a4046069e0856056859071af01895607e6f84368870aa73a6bbca051331"
+    },
+    {
+      "path": "shared/references/curriculum-contract.md",
+      "sha256": "06145aebda0917f80f5add8c2e176c676773fdb8d4df688f52bdbc2a6d8e8373"
+    },
+    {
+      "path": "shared/references/curriculum-m1.json",
+      "sha256": "ab4652053ae15f2d9ab31bf0036a066528e4a0acd66affedad430f95cbe3a549"
+    },
+    {
+      "path": "shared/schemas/final.schema.json",
+      "sha256": "eefb608780378cea3384f774829f4f3fde2b869ae56ebe08ac8d2fefe3283998"
+    },
+    {
+      "path": "shared/schemas/final-0.1.schema.json",
+      "sha256": "bd4bab88a548cc8a99c6ff97e73dedf339030091dd0527d6c59785dcf0742c34"
+    },
+    {
+      "path": "shared/scripts/package_io.py",
+      "sha256": "435ca9b2a71928654e08fd202fc5c022b79fe17cba3e93815502bc6aed62af8f"
+    },
+    {
+      "path": "shared/scripts/lab.py",
+      "sha256": "75f5d503d7c831d1700fa0f17f5a9724fb345b55fc350abf9d58eddfe8093f3a"
+    },
+    {
+      "path": "shared/scripts/curriculum.py",
+      "sha256": "e1ee238a8f26fafb26646b728860fd8eee1fd8fc38de62d075f7d6cedf48bd5e"
+    },
+    {
+      "path": "shared/scripts/quality.py",
+      "sha256": "a74ed067ee542bfe50c7ddf9d77d087c88b95f7434d1900b453f20acdbfe99c2"
+    },
+    {
+      "path": "shared/scripts/check_final.cjs",
+      "sha256": "1f28c34caa92ee0333df9c2679d8887eaa1c9386c61941e7090a02ebe002a9dc"
+    },
+    {
+      "path": "shared/scripts/check_package.cjs",
+      "sha256": "20a3d34e70bffdd4c428116ed288ec9c2af31c77dcaaf45c3820395186a706f2"
+    },
+    {
+      "path": "shared/scripts/check_math.cjs",
+      "sha256": "020196cd1280fedf53d8f27d2f692451cea5a11cee816c23020f161b83fa95e2"
+    },
+    {
+      "path": "viewer/validator.js",
+      "sha256": "ad8ba3d5e3cc7e80d863e594cf550f2036cb2592b9fc866b9251e26a344f76d0"
+    },
+    {
+      "path": "viewer/package-reader.js",
+      "sha256": "95832d41735ee149266ab5630ab6a183ec6dfbf73f30caab48505e6b42d056fb"
+    },
+    {
+      "path": "viewer/vendor/jszip/dist/jszip.min.js",
+      "sha256": "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e"
+    },
+    {
+      "path": "viewer/vendor/jszip/LICENSE.markdown",
+      "sha256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4"
+    },
+    {
+      "path": "viewer/vendor/katex/dist/katex.min.js",
+      "sha256": "e8d885505949f3a5f4abdd5dd0d53696bd1371ad26ffbf4f310dcd77c8cdae89"
+    },
+    {
+      "path": "viewer/vendor/katex/LICENSE",
+      "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3"
+    },
+    {
+      "path": "shared/scripts/runtime_environment.py",
+      "sha256": "674875ccfb1a20072744af479a7ea9ae3d9aea1eb7ae7f19921f53dde909401f"
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0,str(ROOT/'shared/scripts'))
 sys.path.insert(0,str(ROOT/'scripts'))
 from metrics import aggregate_usage, measured_savings
@@ -58,8 +58,8 @@ class MetricsTests(unittest.TestCase):
         self.assertIsNone(result['runs'][0]['comparison'])
         self.assertFalse(result['automatic_promotion'])
     def test_completed_evaluates_existing_outputs(self):
-        (ROOT/'tmp').mkdir(exist_ok=True)
-        with tempfile.TemporaryDirectory(dir=ROOT/'tmp') as temporary:
+        (WORK_ROOT).mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=WORK_ROOT) as temporary:
             home=Path(temporary)
             from test_contract_compatibility import fixture
             data=fixture()

@@ -7,7 +7,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
-ROOT = Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT / 'scripts'))
 import gold
 
@@ -27,8 +27,8 @@ def write_package(file, extras=True):
 
 class GoldTests(unittest.TestCase):
     def setUp(self):
-        (ROOT/'tmp').mkdir(exist_ok=True)
-        self.temp=tempfile.TemporaryDirectory(dir=ROOT/'tmp')
+        (WORK_ROOT).mkdir(exist_ok=True)
+        self.temp=tempfile.TemporaryDirectory(dir=WORK_ROOT)
         self.home=Path(self.temp.name)
         self.package=self.home/'reference.zip'
         write_package(self.package)

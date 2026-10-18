@@ -3,7 +3,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-ROOT = Path(__file__).resolve().parents[1]
+from dev_paths import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT/'shared/scripts'))
 from source_review import build_review
 
@@ -21,7 +21,7 @@ def main():
         if not sep or not sid or not file or sid in sources:
             parser.error('Supply unique --source ID=PATH')
         sources[sid] = file
-    print(json.dumps(build_review(args.candidate, sources, args.output, args.scale), ensure_ascii=False, indent=2))
+    print(json.dumps(build_review(args.candidate, sources, args.output, args.scale, workspace=WORK_ROOT), ensure_ascii=False, indent=2))
 
 
 if __name__ == '__main__':

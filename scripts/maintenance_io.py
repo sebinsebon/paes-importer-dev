@@ -1,10 +1,10 @@
 """Private maintenance reports are confined to checkout tmp; no overwrite."""
 from pathlib import Path
-ROOT = Path(__file__).resolve().parents[1]
+from dev_paths import DEV_ROOT as ROOT, WORK_ROOT
 
 def write_report(file, text):
     file = Path(file).absolute()
-    boundary = (ROOT / 'tmp').resolve()
+    boundary = WORK_ROOT.resolve()
     if boundary not in file.resolve().parents:
         raise ValueError('Reports must remain within checkout tmp/')
     for part in (file, *file.parents):

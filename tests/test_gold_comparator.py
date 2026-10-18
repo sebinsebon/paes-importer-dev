@@ -2,7 +2,7 @@ import copy
 import sys
 import unittest
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0,str(ROOT/'scripts'))
 from compare_gold import compare
 

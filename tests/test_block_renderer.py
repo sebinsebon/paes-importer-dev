@@ -3,7 +3,7 @@ import subprocess
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from support import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 
 class BlockRendererTests(unittest.TestCase):
     def test_nested_blocks_and_math_mode(self):
