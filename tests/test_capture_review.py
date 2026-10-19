@@ -128,6 +128,12 @@ class CaptureReviewTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get('PAES_TEST_BROWSER'), 'Set PAES_TEST_BROWSER to an existing browser for opt-in capture')
 class ActualBrowserCaptureTests(unittest.TestCase):
     def test_generated_review_captures_real_render_and_validates_receipt(self):
+        self.assert_capture('file')
+
+    def test_memory_transport_captures_real_math_images_and_fonts(self):
+        self.assert_capture('memory')
+
+    def assert_capture(self, transport):
         import test_importer as fixtures
         import importer as app
         producer = fixtures.ImporterTests()
@@ -138,8 +144,9 @@ class ActualBrowserCaptureTests(unittest.TestCase):
             producer.produce(image=True)
             configure_workspace(folder.parent.parent)
             reference = app.check_template(folder)['questions'][0]['render_review']
-            result = capture_review(folder, reference, executable_path=os.environ['PAES_TEST_BROWSER'])
+            result = capture_review(folder, reference, executable_path=os.environ['PAES_TEST_BROWSER'], transport=transport)
             self.assertEqual(result['status'], 'captured', result.get('limitation'))
+            self.assertEqual(result['transport'], transport)
             self.assertEqual(len(result['screenshots']), 2)
             candidate = read(folder/'candidate.json')
             for screenshot, question in zip(result['screenshots'], candidate['questions']):

@@ -181,6 +181,7 @@ class ImporterTests(unittest.TestCase):
                     if required:
                         refs=[{'path':e['path'],'sha256':e['sha256'],'observation':'Synthetic own-source assertion'} for e in packet['evidence'] if any(e['source_id']==r['source_id'] and e['page']==r['page'] for r in required)]
                     if dimension=='options':refs=[r for r in exam_refs if next(e for e in packet['evidence'] if e['path']==r['path'])['page']==int(question['number'])]
+                    if dimension=='assets_math':refs=list({r['path']:r for r in exam_refs+[{'path':e['path'],'sha256':e['sha256'],'observation':'Synthetic explanation structure'} for e in packet['evidence'] if any(e['source_id']==r['source_id'] and e['page']==r['page'] for r in packet.get('source_requirements',{}).get(row['id'],{}).get('explanation',[]))]}.values())
                     if dimension=='consistency':refs=list({r['path']:r for r in exam_refs+[{'path':e['path'],'sha256':e['sha256'],'observation':'Synthetic own-source assertion'} for e in packet['evidence'] if any(e['source_id']==r['source_id'] and e['page']==r['page'] for values in packet.get('source_requirements',{}).get(row['id'],{}).values() for r in values)]}.values())
                     check.update(status='pass',reason='Synthetic pass',evidence=refs)
                 evidence=exam_refs
