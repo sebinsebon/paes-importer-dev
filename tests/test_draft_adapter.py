@@ -113,7 +113,8 @@ class DraftAdapterTests(unittest.TestCase):
         self.assertEqual(asset['bbox'], [10,20,30,40])
         self.assertEqual((self.folder/report['archive']).read_bytes(), self.draft_path.read_bytes())
         from pdf_assets import apply_crops
-        apply_crops(self.folder, [{'id':'new-crop','source_id':'exam','page':1,'bbox':[40,50,100,100],'role':'asset'}])
+        # Exercise asset synchronization with a complete region, not clipped glyphs.
+        apply_crops(self.folder, [{'id':'new-crop','source_id':'exam','page':1,'bbox':[0,0,400,400],'role':'asset'}])
         app.engine.sync_assets(self.folder)
         self.assertIn(asset, read(self.folder/'candidate.json')['assets'])
         # Ingest the actual adapted visual content after the normal crop command.

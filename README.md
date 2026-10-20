@@ -22,8 +22,8 @@ manifests accompany the preserved tracked files, temporary results and old Pytho
 environment. Historical runs retain original paths and hashes; they are not
 silently rewritten or claimed resumable after relocation.
 
-No public development repository has been created or published by this migration.
-The reachable original history was screened before importing it into this local
+The development repository is https://github.com/sebinsebon/paes-importer-dev.
+The reachable original history was screened before importing it into this
 repository and rechecked with the versioned scanner. Private reports remain in
 `results/`; pattern screening alone is not a publication certificate.
 
