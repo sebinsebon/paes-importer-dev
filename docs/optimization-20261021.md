@@ -1,7 +1,9 @@
 # Optimización documental del importador
 
-El candidato se desarrolla en `optimization-runtime`; las pruebas y herramientas
-permanecen en este repositorio. No se incluyen PDFs privados, importaciones reales
+El candidato se mantiene en `paes-importer-skill`, rama `integration/1.5.0`;
+las pruebas y herramientas permanecen en `paes-importer-dev`, en la rama del
+mismo nombre. La [consolidación de los worktrees](worktree-consolidation-20261021.md)
+conserva commits y artefactos históricos. No se incluyen PDFs privados, importaciones reales
 ni modificaciones de TESLA RC3. La referencia de fidelidad requiere adjudicación
 documental: el Gold declarado por ejecuciones anteriores no la sustituye.
 
