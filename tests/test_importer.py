@@ -124,14 +124,21 @@ class ImporterTests(unittest.TestCase):
         self.cotejo()
     def cotejo(self):
         from evidence import citation_requirements
+        from capture_review import record_browser_capture
+        from PIL import Image
         app.visual_review.create_review(self.folder)
         record=app.check_template(self.folder); candidate=read(self.folder/'candidate.json')
         selection={q['id']:q for q in read(self.folder/'selection.json')['expected_questions']}
         keys={e['question_id']:e for e in read(self.folder/'answer-key-map.json')['entries']} if (self.folder/'answer-key-map.json').exists() else {}
         provenance=read(self.folder/'explanation-provenance.json')
+        image = self.home/'synthetic-visual-artifact.png'
+        Image.new('RGB', (24, 24), 'white').save(image)
         for row in record['questions']:
             question=next(q for q in candidate['questions'] if q['id']==row['id'])
-            row['visual_observation']={'mode':'html','tool':'synthetic fixture','observation':'Synthetic assertion only; not a real visual inspection'}
+            receipt = record_browser_capture(self.folder, row['render_review'], row['id'], image,
+                tool='synthetic fixture', observation='Fictional test artifact; no comprehension claim')
+            row['visual_observation']={'mode':'images','tool':'synthetic fixture',
+                'observation':'Synthetic assertion only; not a real visual inspection', 'capture_receipt':receipt}
             for dimension,check in row['checks'].items():
                 citations={}
                 for field in check['field_paths']:
@@ -141,6 +148,18 @@ class ImporterTests(unittest.TestCase):
                         cite=citations.setdefault(resource['id'],{'id':resource['id'],'sha256':resource['sha256'],'observation':'Fictional source evidence','fields':[]})
                         if field not in cite['fields']:cite['fields'].append(field)
                 check.update(status='pass',reason='Synthetic assertion only',evidence=list(citations.values()))
+            for adjudication in row.get('diagnostic_review', []):
+                diagnostic = next(d for d in row['source_diagnostics'] if
+                                  d['diagnostic_sha256']==adjudication['diagnostic_sha256'])
+                adjudication.update(status='dismissed',
+                    reason='Synthetic fixture deliberately differs from PDF; not a fidelity assertion',
+                    evidence=[{'id':e['id'], 'sha256':e['sha256'],
+                               'observation':'Synthetic diagnostic adjudication only'}
+                              for e in candidate['evidence'] if
+                              e['source_id']==diagnostic.get('source_id',question['source_id']) and
+                              (not (diagnostic.get('page') or diagnostic.get('pages') or diagnostic.get('regions')) or
+                               e['page'] in ({diagnostic['page']} if diagnostic.get('page') else set()) |
+                               set(diagnostic.get('pages',[])) | {r['page'] for r in diagnostic.get('regions',[])})])
         f=self.fixture_file('check.json',record)
         configure_workspace(self.folder.parent.parent);app.record_check(self.folder,f)
     def commit_blind(self, vf):

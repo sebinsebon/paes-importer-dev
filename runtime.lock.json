@@ -1,6 +1,7 @@
 {
   "repository": "https://github.com/sebinsebon/paes-importer-skill",
-  "commit": "32a05afd8d5f5443129e4dc1a5682400636984a9",
-  "candidate_release_sha256": "6ffe6557b6faf6202976f324bc3b20e46302fa96243aaa949338e54d782fe172",
-  "status": "pinned_revision"
+  "commit": "c0d0b719e26a2f42133a038514989d62c74f7023",
+  "candidate_release_sha256": "91dc842758faf47d56119cda054d5458e942527764f650ec8ead5014d7e0456a",
+  "version": "1.5.0-portable",
+  "status": "pinned_local_candidate"
 }

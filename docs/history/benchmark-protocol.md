@@ -2,13 +2,17 @@
 
 ## Corpus y condiciones
 
-TESLA Gold se usa como conjunto de desarrollo cuando su certificación esté completa. Curar dos ensayos M1 adicionales: uno digital y otro escaneado/con mayor complejidad visual. Incluir pauta completa, parcial, integrada y ausente; guardar al menos un conjunto sellado que no se use para ajustar prompts. Las anotaciones se adjudican independientemente. Datos reales permanecen fuera de Git y bundle, bajo tmp/ o en sus ubicaciones de solo lectura.
+Gold documental exige cotejo visual vigente del ensayo y solucionario disponible; no exige segunda resolución ni estados matemáticos `verified`. La declaración de Gold de una ejecución no certifica por sí sola la referencia. TESLA RC3 permanece de solo lectura; adjudicar cualquier referencia propuesta antes de compararla. Curar dos ensayos M1 adicionales: uno digital y otro escaneado/con mayor complejidad visual. Incluir pauta completa, parcial, integrada y ausente; guardar al menos un conjunto sellado que no se use para ajustar prompts. Las anotaciones se adjudican documentalmente. Datos reales permanecen fuera de Git y bundle, bajo tmp/ o en sus ubicaciones de solo lectura.
 
 Congelar Skill/release, modelo, esfuerzo, anfitrión, capacidades, fuentes y configuración. Ejecutar primero la línea base, después las correcciones de fidelidad y después cada optimización por separado. Comparar producción con lotes 1, 3 y 5; revisión con 1, 5 y 10. Tres repeticiones por condición finalista. Una estrategia puede reducir llamadas y aumentar errores: ambos resultados deben publicarse. No comparar capacidades distintas como si fueran la misma condición.
 
 Preparar recursos, índices y cachés solo por hash de fuente + región + escala/configuración. Un índice o resumen compacto debe permitir volver al PDF, sin sustituir evidencia obligatoria. Medir el contexto enviado y las relecturas. Ante fallo de lote, medir preguntas aceptadas/rechazadas y reintentos; no contabilizar una ejecución interrumpida como éxito.
 
 ## Evaluador de ejecuciones existentes
+
+La instrumentación vigente, hashes adicionales de condiciones, tiempo desde la
+solicitud y límites de atribución se describen en
+[el protocolo de optimización](../optimization-20261021.md#medición-reproducible).
 
 scripts/benchmark.py no hace llamadas a modelos ni importa ensayos. Consume un manifiesto JSON de importaciones ya producidas y uso real de proveedores:
 

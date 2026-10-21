@@ -70,6 +70,21 @@ class VisualReviewTests(unittest.TestCase):
         row = refreshed['questions'][0]
         row['checks'] = copy.deepcopy(original['questions'][0]['checks'])
         row['visual_observation'] = copy.deepcopy(original['questions'][0]['visual_observation'])
+        from capture_review import record_browser_capture
+        row['visual_observation']['capture_receipt'] = record_browser_capture(self.folder,
+            row['render_review'], row['id'], self.fixture.home/'synthetic-visual-artifact.png',
+            tool='synthetic fixture', observation='Synthetic recapture after changed content')
+        candidate = read(self.folder/'candidate.json')
+        for resolution in row.get('diagnostic_review', []):
+            diagnostic = next(d for d in row['source_diagnostics'] if
+                              d['diagnostic_sha256']==resolution['diagnostic_sha256'])
+            resolution.update(status='dismissed',reason='Synthetic fixture deliberately differs from PDF',
+                evidence=[{'id':e['id'],'sha256':e['sha256'],'observation':'Synthetic diagnostic'}
+                          for e in candidate['evidence'] if
+                          e['source_id']==diagnostic.get('source_id','exam') and
+                          (not (diagnostic.get('page') or diagnostic.get('pages') or diagnostic.get('regions')) or
+                           e['page'] in ({diagnostic['page']} if diagnostic.get('page') else set()) |
+                           set(diagnostic.get('pages',[])) | {r['page'] for r in diagnostic.get('regions',[])})])
         refreshed['questions'] = [row]
         request = self.fixture.fixture_file('changed-cotejo.json', refreshed)
         configure_workspace(self.folder.parent.parent)

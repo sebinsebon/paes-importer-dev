@@ -9,7 +9,44 @@ from gold import load_reference, sha
 from maintenance_io import write_report
 from dev_paths import RUNTIME_ROOT as ROOT, DEV_ROOT, WORK_ROOT
 sys.path.insert(0, str(ROOT / 'shared/scripts'))
-from metrics import aggregate_usage, measured_savings
+from metrics import FIELDS as USAGE_FIELDS, aggregate_usage, measured_savings, summarize_timeline
+
+def host_events(path, context=None):
+    """Import normalized host JSON/JSONL; retain unknown times as unknown.
+
+    Hosts export individual intervals with category auxiliary/provider/backoff/pause,
+    explicit timezone timestamps and optional retry/backoff observations. Raw log
+    messages without timing are retained as observations, never invented intervals.
+    """
+    path = Path(path)
+    raw = path.read_text(encoding='utf-8-sig')
+    if path.suffix.lower() == '.log':
+        # AGY's retry records expose an announced delay, not an observed sleep or
+        # inference interval. The local log timestamp omits year/timezone.
+        from datetime import datetime
+        events=[]
+        for number,line in enumerate(raw.splitlines(),1):
+            match=re.search(r'Run: attempt (\d+) failed \((.*)\), retrying in ([\d.]+)s',line)
+            if not match: continue
+            reason=match[2]
+            code=re.search(r'code (\d+)',reason)
+            stamp=re.match(r'[IWEF](\d{2})(\d{2}) (\d{2}:\d{2}:\d{2}\.\d+)',line)
+            timestamp=None
+            if stamp and context and context.get('year') and context.get('utc_offset'):
+                timestamp=datetime.fromisoformat(f"{context['year']}-{stamp[1]}-{stamp[2]}T{stamp[3]}{context['utc_offset']}").isoformat()
+            events.append({'event':'provider_retry','category':'provider','source_line':number,
+                'timestamp':timestamp,'retry_count':1,'attempt':int(match[1]),
+                'error_code':'PROVIDER_'+code[1] if code else 'PROVIDER_STREAM_IDLE_TIMEOUT' if 'stream idle timeout' in reason else 'PROVIDER_ERROR',
+                'announced_backoff_seconds':float(match[3]),'started_at':None,'finished_at':None})
+        if not events and raw.strip():
+            raise ValueError('No recognized AGY retry records; export normalized JSON/JSONL for other hosts')
+        return events
+    rows = json.loads(raw) if path.suffix.lower() == '.json' else [json.loads(line) for line in raw.splitlines() if line.strip()]
+    if isinstance(rows, dict):
+        rows = rows.get('events')
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+        raise ValueError('Host logs must contain individual event objects')
+    return rows
 
 def evaluate(manifest, directory):
     directory = Path(directory)
@@ -31,6 +68,16 @@ def evaluate(manifest, directory):
         all_events.extend(events)
         record = {'id': run_id, 'status': run['status'], 'usage': usage,
                   'metadata': run.get('metadata', {}), 'comparison': None}
+        timeline = list(run.get('events', []))
+        log_hashes = {}
+        for name in ('importer_events', 'host_events'):
+            if run.get(name):
+                path = Path(run[name])
+                path = path if path.is_absolute() else directory / path
+                timeline.extend(host_events(path,run.get('host_log_context') if name=='host_events' else None))
+                log_hashes[name] = sha(path.read_bytes())
+        record['timing'] = summarize_timeline(timeline, requested_at=run.get('requested_at'), finished_at=run.get('finished_at'))
+        record['log_hashes'] = log_hashes
         if run['status'] == 'completed':
             def resolve(name):
                 supplied = Path(run[name])
@@ -65,13 +112,14 @@ def evaluate(manifest, directory):
             'quality_gate': 'Requires source fidelity and adjudicated semantic/visual review; literal equality alone is insufficient.'}
 
 def compare_reports(baseline, candidate):
-    required = ('host', 'model', 'effort', 'capabilities_sha256', 'generation_config_sha256')
+    required = ('host', 'model', 'effort', 'capabilities_sha256', 'generation_config_sha256',
+                'sources_sha256','environment_sha256','batch_policy_sha256')
     def conditions(report):
         result = {}
         for run in report['runs']:
             metadata = run.get('metadata', {})
             pair = metadata.get('pair_id', run['id'])
-            if pair in result or any(not isinstance(metadata.get(k),str) or not metadata[k].strip() for k in required) or any(not re.fullmatch(r'[a-f0-9]{64}',metadata.get(k,'')) for k in ('capabilities_sha256','generation_config_sha256')) or not run.get('input_hashes', {}).get('gold'):
+            if pair in result or any(not isinstance(metadata.get(k),str) or not metadata[k].strip() for k in required) or any(not re.fullmatch(r'[a-f0-9]{64}',metadata.get(k,'')) for k in required if k.endswith('_sha256')) or not run.get('input_hashes', {}).get('gold'):
                 return None
             result[pair] = (run['status'], run['input_hashes']['gold'],
                             tuple(run['input_hashes'].get(k) for k in ('gold_taxonomy','id_map','certification')),
@@ -79,8 +127,22 @@ def compare_reports(baseline, candidate):
         return result
     left, right = conditions(baseline), conditions(candidate)
     comparable = left is not None and left == right
+    from statistics import median
+    pairs = []
+    if comparable:
+        right_rows = {r.get('metadata', {}).get('pair_id', r['id']):r for r in candidate['runs']}
+        for row in baseline['runs']:
+            other = right_rows[row.get('metadata', {}).get('pair_id', row['id'])]
+            a, b = row.get('timing', {}).get('wall_seconds'), other.get('timing', {}).get('wall_seconds')
+            if row['status'] == other['status'] == 'completed' and a is not None and b is not None:
+                pairs.append((a,b))
     return {'conditions_matched': comparable,
-            'measured_savings': measured_savings(baseline['usage'], candidate['usage']) if comparable else {key: None for key in ('input_tokens','output_tokens','cost','duration_seconds')},
+            'measured_savings': measured_savings(baseline['usage'], candidate['usage']) if comparable else {key: None for key in USAGE_FIELDS},
+            'wall_time': {'paired_repetitions': len(pairs),
+                'baseline_median_seconds': median(a for a,b in pairs) if pairs else None,
+                'candidate_median_seconds': median(b for a,b in pairs) if pairs else None,
+                'median_paired_reduction_seconds': median(a-b for a,b in pairs) if pairs else None,
+                'conclusion': 'descriptive_only_requires_fidelity_adjudication' if len(pairs)>=3 else 'inconclusive'},
             'warning': 'Savings are descriptive. Same reference, paired repetitions, host, model, effort, capabilities and generation settings are required; semantic quality must be adjudicated separately.'}
 
 def main():

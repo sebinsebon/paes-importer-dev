@@ -13,7 +13,7 @@ from capture_review import capture_review, _local_request_allowed
 from lab import configure_workspace, digest, read, write
 from pipeline import content_hash, solution_hash
 from test_contract_compatibility import fixture
-from visual_review import PROTOCOL, validate_observation
+from visual_review import PROTOCOL, validate_observation, dependency_hash
 
 
 class CaptureReviewTests(unittest.TestCase):
@@ -31,7 +31,8 @@ class CaptureReviewTests(unittest.TestCase):
         record = {'protocol': PROTOCOL, 'run_id': self.candidate['run']['id'],
             'questions': {self.question['id']: {
                 'content_sha256': content_hash(self.question,self.candidate,self.folder),
-                'solution_sha256': solution_hash(self.question,self.candidate,self.folder)}},
+                'solution_sha256': solution_hash(self.question,self.candidate,self.folder),
+                'dependencies_sha256': dependency_hash(self.folder,self.question)}},
             'files': [{'path':html.relative_to(self.folder).as_posix(),'sha256':digest(html)}]}
         manifest = self.snapshot/'render-review.json'
         write(manifest, record)
@@ -45,7 +46,8 @@ class CaptureReviewTests(unittest.TestCase):
         result = subprocess.run([sys.executable,'-B','-c',code,str(ROOT/'shared/scripts')],capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stderr)
         html = {'mode':'html','tool':'synthetic-native','observation':'Inspected fictional rendered result'}
-        self.assertTrue(validate_observation(self.folder,html,self.reference,self.question,self.candidate))
+        with self.assertRaisesRegex(ValueError, 'capture_receipt'):
+            validate_observation(self.folder,html,self.reference,self.question,self.candidate)
         missing = {'mode':'unavailable','tool':'none','observation':'No HTML or image inspection tool'}
         self.assertFalse(validate_observation(self.folder,missing,self.reference,self.question,self.candidate))
         with self.assertRaisesRegex(ValueError,'tool'):
@@ -68,13 +70,15 @@ class CaptureReviewTests(unittest.TestCase):
         class Locator:
             def __init__(self, selector): self.selector=selector
             def inner_text(self): return ''
-            def evaluate_all(self, script): return [owner.question['id']]
+            def evaluate_all(self, script): return [q['id'] for q in owner.candidate['questions']]
             def nth(self, index): return self
             def screenshot(self, **kwargs): Image.new('RGB',(12,8),'white').save(kwargs['path'])
         class Page:
             def goto(self,*args,**kwargs): owner.events.append('loaded')
             def wait_for_function(self,*args,**kwargs): owner.events.append('ready')
             def evaluate(self,script):
+                if 'capture-self-test' in script:
+                    return True
                 owner.assertIn('document.fonts.ready',script)
                 owner.assertIn('document.images',script)
                 owner.events.append('fonts-and-images')

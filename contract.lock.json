@@ -29,7 +29,7 @@
     },
     {
       "path": "shared/scripts/package_io.py",
-      "sha256": "435ca9b2a71928654e08fd202fc5c022b79fe17cba3e93815502bc6aed62af8f"
+      "sha256": "aac782ac5ae24961e63cc447810f4fa00fc136a399bfedba9e17ce578a6c2d0b"
     },
     {
       "path": "shared/scripts/lab.py",

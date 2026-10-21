@@ -33,7 +33,8 @@ class MetricsTests(unittest.TestCase):
         after=aggregate_usage([{'event_id':'b','cost':80,'currency':'USD'}])
         self.assertEqual(measured_savings(before,after)['cost'],.2)
     def test_report_savings_require_matched_conditions(self):
-        row={'id':'a','status':'completed','metadata':{'host':'cli','model':'synthetic','effort':'test','capabilities_sha256':'a'*64,'generation_config_sha256':'b'*64},'input_hashes':{'gold':'reference'}}
+        row={'id':'a','status':'completed','metadata':{'host':'cli','model':'synthetic','effort':'test','capabilities_sha256':'a'*64,'generation_config_sha256':'b'*64,
+            'sources_sha256':'c'*64,'environment_sha256':'d'*64,'batch_policy_sha256':'e'*64},'input_hashes':{'gold':'reference'}}
         before={'runs':[row],'usage':{'input_tokens':100}}
         after={'runs':[row],'usage':{'input_tokens':80}}
         self.assertTrue(compare_reports(before,after)['conditions_matched'])
@@ -41,11 +42,12 @@ class MetricsTests(unittest.TestCase):
         after['runs']=[{**row,'metadata':{}}]
         self.assertIsNone(compare_reports(before,after)['measured_savings']['input_tokens'])
     def test_savings_require_capability_and_generation_settings(self):
-        metadata={'host':'cli','model':'synthetic','effort':'test','capabilities_sha256':'a'*64,'generation_config_sha256':'b'*64}
+        metadata={'host':'cli','model':'synthetic','effort':'test','capabilities_sha256':'a'*64,'generation_config_sha256':'b'*64,
+                  'sources_sha256':'c'*64,'environment_sha256':'d'*64,'batch_policy_sha256':'e'*64}
         row={'id':'a','status':'completed','metadata':metadata,'input_hashes':{'gold':'reference'}}
         before={'runs':[row],'usage':{'input_tokens':100}}
-        for key in ('capabilities_sha256','generation_config_sha256'):
-            changed={**metadata,key:'c'*64};after={'runs':[{**row,'metadata':changed}],'usage':{'input_tokens':80}}
+        for key in ('capabilities_sha256','generation_config_sha256','sources_sha256','environment_sha256','batch_policy_sha256'):
+            changed={**metadata,key:'f'*64};after={'runs':[{**row,'metadata':changed}],'usage':{'input_tokens':80}}
             self.assertFalse(compare_reports(before,after)['conditions_matched'])
             self.assertIsNone(compare_reports(before,after)['measured_savings']['input_tokens'])
     def test_savings_do_not_invent_missing_data(self):
