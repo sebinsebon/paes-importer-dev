@@ -44,7 +44,8 @@ def main():
     (output/'comparison.html').write_text(document,encoding='utf-8')
     if args.pdf is None:
         from test_contract_compatibility import fixture
-        from package_io import validate
+        from package_io import validate, pack
+        from lab import configure_workspace
         data=fixture(); q=data['questions'][0]
         data['sources'][0].update(name=source.name,sha256=digest(source))
         data['exam']['title']='Synthetic PDF typography review - pending'
@@ -55,6 +56,8 @@ def main():
         q['issues']=['TEXT_FORMAT_PENDING','SYNTHETIC_SOURCE_NOT_GOLD','CURRICULUM_PENDING']
         validate(data)
         (output/'demo.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        configure_workspace(output)
+        pack(output/'demo.json')
     print(str(output/'comparison.html'))
 
 

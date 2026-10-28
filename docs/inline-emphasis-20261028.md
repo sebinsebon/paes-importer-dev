@@ -2,6 +2,8 @@
 
 Implementación sin fusionar a main: [PAESSED #10](https://github.com/sebinsebon/paessed.cl/pull/10), [skill #5](https://github.com/sebinsebon/paes-importer-skill/pull/5). El ajuste de texto para IA está en [#9](https://github.com/sebinsebon/paessed.cl/pull/9), que conserva el estado de borrador.
 
+[Pruebas y herramientas #2](https://github.com/sebinsebon/paes-importer-dev/pull/2). [Vista previa de PAESSED](https://paesseduiux-jepmm3veo-sebinsebonzb-gmailcoms-projects.vercel.app/app/ensayos/importar): despliegue exitoso del commit 1d9fc70 según GitHub. Las pruebas visuales se hicieron en el build local de producción; el conector Vercel no tiene acceso al equipo para inspección autenticada remota.
+
 ## Sincronización y ramas
 
 - PAESSED: main local actualizado por fast-forward de 2d73d6d a d614fcd (12 commits). #8 ya estaba fusionado en GitHub. feat/ensayos-source-selector se conserva aunque ya pertenece a main. feat/ai-question-handoff sigue en borrador. feat/paes-m1-aventura-mvp diverge de main (147 commits solo en main, 20 solo en aventura) y no tiene aprobación vigente para fusionar.
